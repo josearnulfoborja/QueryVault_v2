@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QueryVault - Gestor de Consultas SQL</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="assets/prism.js" defer></script>
+    <script src="js/main.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📚 QueryVault</h1>
+            <p class="subtitle">Organiza y gestiona tus consultas SQL como en Workflowy</p>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="🔍 Buscar consultas por título, descripción, código SQL o autor..." />
+                <button id="new-query-btn" class="primary-btn">➕ Nueva Consulta</button>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Cargando consultas...</p>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Queries List -->
+            <div id="queries-list" class="queries-list">
+                <!-- Las consultas se cargarán aquí dinámicamente -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="empty-state hidden">
+                <div class="empty-icon">📝</div>
+                <h3>No hay consultas aún</h3>
+                <p>Comienza creando tu primera consulta SQL</p>
+                <button class="primary-btn" onclick="openNewQueryModal()">Crear Primera Consulta</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para Nueva/Editar Consulta -->
+    <div id="query-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Nueva Consulta SQL</h2>
+                <button id="close-modal" class="close-btn">✖</button>
+            </div>
+            
+            <form id="query-form" class="modal-body">
+                <div class="form-group">
+                    <label for="query-title">Título *</label>
+                    <input type="text" id="query-title" name="titulo" placeholder="Ej: Consulta de usuarios activos" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="query-description">Descripción</label>
+                    <textarea id="query-description" name="descripcion" placeholder="Describe brevemente qué hace esta consulta..." rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="query-author">Autor</label>
+                    <input type="text" id="query-author" name="autor" placeholder="Tu nombre">
+                </div>
+
+                <div class="form-group">
+                    <label for="query-sql">Código SQL *</label>
+                    <textarea id="query-sql" name="sql_codigo" placeholder="SELECT * FROM usuarios WHERE activo = 1;" rows="8" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="query-tags">Etiquetas (separadas por comas)</label>
+                    <input type="text" id="query-tags" name="etiquetas" placeholder="usuarios, reportes, activos">
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="query-favorite" name="favorito">
+                        <span class="checkmark">⭐</span>
+                        Marcar como favorito
+                    </label>
+                </div>
+            </form>
+
+            <div class="modal-footer">
+                <button type="button" id="cancel-btn" class="secondary-btn">Cancelar</button>
+                <button type="submit" id="save-btn" class="primary-btn" form="query-form">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay hidden"></div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+</body>
+</html>

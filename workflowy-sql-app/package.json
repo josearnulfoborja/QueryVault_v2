@@ -1,0 +1,31 @@
+{
+  "name": "workflowy-sql-app",
+  "version": "1.0.0",
+  "description": "A web application that combines hierarchical node structure with enriched message visualization for SQL code snippets.",
+  "main": "src/index.html",
+  "scripts": {
+    "start": "live-server src",
+    "build": "echo 'Build step not defined'",
+    "test": "echo 'Test step not defined'"
+  },
+  "keywords": [
+    "workflowy",
+    "sql",
+    "syntax-highlighting",
+    "web-app"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "prismjs": "^1.25.0"
+  },
+  "devDependencies": {},
+  "homepage": "https://github.com/yourusername/workflowy-sql-app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/workflowy-sql-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/workflowy-sql-app/issues"
+  }
+}
