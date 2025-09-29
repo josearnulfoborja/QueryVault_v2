@@ -3,31 +3,65 @@ require('dotenv').config();
 
 console.log('🔄 CONFIGURACIÓN MYSQL CON URL COMPLETA');
 
+// Función para parsear URL MySQL manualmente
+function parseMySQLUrl(url) {
+    // mysql://user:password@host:port/database
+    const match = url.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+    if (!match) {
+        throw new Error('Formato de URL MySQL inválido');
+    }
+    
+    return {
+        host: match[3],
+        user: match[1],
+        password: match[2],
+        port: parseInt(match[4]),
+        database: match[5]
+    };
+}
+
 // Usar MYSQL_URL directamente si está disponible
 let dbConfig;
 
 if (process.env.MYSQL_URL) {
     console.log('✅ Usando MYSQL_URL de Railway');
     
-    // Parsear la URL: mysql://user:password@host:port/database
-    const url = new URL(process.env.MYSQL_URL);
-    
-    dbConfig = {
-        host: url.hostname,
-        user: url.username,
-        password: url.password,
-        database: url.pathname.substring(1), // Remove leading /
-        port: parseInt(url.port) || 3306,
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0
-    };
-    
-    console.log('📊 Configuración desde MYSQL_URL:');
-    console.log('Host:', dbConfig.host);
-    console.log('User:', dbConfig.user);
-    console.log('Database:', dbConfig.database);
-    console.log('Port:', dbConfig.port);
+    try {
+        const parsed = parseMySQLUrl(process.env.MYSQL_URL);
+        
+        dbConfig = {
+            host: parsed.host,
+            user: parsed.user,
+            password: parsed.password,
+            database: parsed.database,
+            port: parsed.port,
+            waitForConnections: true,
+            connectionLimit: 10,
+            queueLimit: 0
+        };
+        
+        console.log('📊 Configuración desde MYSQL_URL:');
+        console.log('Host:', dbConfig.host);
+        console.log('User:', dbConfig.user);
+        console.log('Database:', dbConfig.database);
+        console.log('Port:', dbConfig.port);
+        
+    } catch (error) {
+        console.log('⚠️ Error parseando MYSQL_URL, usando variables individuales');
+        console.error('Error:', error.message);
+        
+        // Fallback a variables individuales
+        dbConfig = {
+            host: process.env.MYSQLHOST || 'localhost',
+            user: process.env.MYSQLUSER || 'root',
+            password: process.env.MYSQLPASSWORD || '',
+            database: process.env.MYSQLDATABASE || 'railway',
+            port: parseInt(process.env.MYSQLPORT) || 3306,
+            waitForConnections: true,
+            connectionLimit: 10,
+            queueLimit: 0
+        };
+    }
     
 } else {
     console.log('⚠️ MYSQL_URL no disponible, usando variables individuales');
