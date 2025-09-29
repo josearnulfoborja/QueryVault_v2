@@ -59,12 +59,15 @@ async function initializeDatabase() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         titulo VARCHAR(255) NOT NULL,
         descripcion TEXT,
-        sql_query LONGTEXT NOT NULL,
+        sql_codigo LONGTEXT NOT NULL,
         categoria VARCHAR(100) DEFAULT 'General',
         fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         fecha_modificacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         activo BOOLEAN DEFAULT TRUE,
         orden_visualizacion INT DEFAULT 0,
+        favorito BOOLEAN DEFAULT FALSE,
+        padre_id INT DEFAULT NULL,
+        autor VARCHAR(100) DEFAULT 'Anónimo',
         INDEX idx_categoria (categoria),
         INDEX idx_fecha_creacion (fecha_creacion),
         INDEX idx_activo (activo)
@@ -120,7 +123,7 @@ async function initializeDatabase() {
         version_numero INT NOT NULL DEFAULT 1,
         titulo VARCHAR(255) NOT NULL,
         descripcion TEXT,
-        sql_query LONGTEXT NOT NULL,
+        sql_codigo LONGTEXT NOT NULL,
         fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         creado_por VARCHAR(100) DEFAULT 'system',
         comentarios TEXT,
@@ -146,27 +149,30 @@ async function initializeDatabase() {
         {
           titulo: 'Usuarios activos',
           descripcion: 'Consulta para obtener todos los usuarios activos del sistema',
-          sql_query: 'SELECT id, nombre, email, fecha_registro FROM usuarios WHERE activo = 1 ORDER BY fecha_registro DESC;',
-          categoria: 'Usuarios'
+          sql_codigo: 'SELECT id, nombre, email, fecha_registro FROM usuarios WHERE activo = 1 ORDER BY fecha_registro DESC;',
+          categoria: 'Usuarios',
+          autor: 'Sistema'
         },
         {
           titulo: 'Ventas por mes',
           descripcion: 'Resumen de ventas agrupadas por mes del año actual',
-          sql_query: 'SELECT MONTH(fecha_venta) as mes, COUNT(*) as total_ventas, SUM(monto) as total_monto FROM ventas WHERE YEAR(fecha_venta) = YEAR(CURDATE()) GROUP BY MONTH(fecha_venta) ORDER BY mes;',
-          categoria: 'Ventas'
+          sql_codigo: 'SELECT MONTH(fecha_venta) as mes, COUNT(*) as total_ventas, SUM(monto) as total_monto FROM ventas WHERE YEAR(fecha_venta) = YEAR(CURDATE()) GROUP BY MONTH(fecha_venta) ORDER BY mes;',
+          categoria: 'Ventas',
+          autor: 'Sistema'
         },
         {
           titulo: 'Productos más vendidos',
           descripcion: 'Top 10 de productos con más ventas',
-          sql_query: 'SELECT p.nombre, COUNT(v.producto_id) as cantidad_vendida, SUM(v.monto) as total_ingresos FROM productos p INNER JOIN ventas v ON p.id = v.producto_id GROUP BY p.id, p.nombre ORDER BY cantidad_vendida DESC LIMIT 10;',
-          categoria: 'Productos'
+          sql_codigo: 'SELECT p.nombre, COUNT(v.producto_id) as cantidad_vendida, SUM(v.monto) as total_ingresos FROM productos p INNER JOIN ventas v ON p.id = v.producto_id GROUP BY p.id, p.nombre ORDER BY cantidad_vendida DESC LIMIT 10;',
+          categoria: 'Productos',
+          autor: 'Sistema'
         }
       ];
       
       for (const consulta of consultasEjemplo) {
         await connection.execute(
-          'INSERT INTO consultas (titulo, descripcion, sql_query, categoria) VALUES (?, ?, ?, ?)',
-          [consulta.titulo, consulta.descripcion, consulta.sql_query, consulta.categoria]
+          'INSERT INTO consultas (titulo, descripcion, sql_codigo, categoria, autor) VALUES (?, ?, ?, ?, ?)',
+          [consulta.titulo, consulta.descripcion, consulta.sql_codigo, consulta.categoria, consulta.autor]
         );
       }
       
@@ -214,12 +220,12 @@ async function initializeDatabase() {
       
       // Crear versiones iniciales para las consultas
       console.log('\n🔄 Creando versiones iniciales de consultas...');
-      const [consultasCreadas] = await connection.execute('SELECT id, titulo, descripcion, sql_query FROM consultas');
+      const [consultasCreadas] = await connection.execute('SELECT id, titulo, descripcion, sql_codigo FROM consultas');
       
       for (const consulta of consultasCreadas) {
         await connection.execute(
-          'INSERT INTO versiones_consulta (consulta_id, version_numero, titulo, descripcion, sql_query, comentarios) VALUES (?, ?, ?, ?, ?, ?)',
-          [consulta.id, 1, consulta.titulo, consulta.descripcion, consulta.sql_query, 'Versión inicial de la consulta']
+          'INSERT INTO versiones_consulta (consulta_id, version_numero, titulo, descripcion, sql_codigo, comentarios) VALUES (?, ?, ?, ?, ?, ?)',
+          [consulta.id, 1, consulta.titulo, consulta.descripcion, consulta.sql_codigo, 'Versión inicial de la consulta']
         );
       }
       
