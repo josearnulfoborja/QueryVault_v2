@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "init-db": "node scripts/initDatabase.js",
     "init-db-railway": "node scripts/initDatabase-railway.js",
+    "force-recreate-db": "node scripts/forceRecreateDB-railway.js",
     "validate-env": "node scripts/validateEnv.js",
     "diagnose-mysql": "node scripts/diagnose-mysql.js",
     "test-mysql": "node scripts/test-mysql.js",
