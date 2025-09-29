@@ -51,15 +51,24 @@ router.post('/', async (req, res) => {
   try {
     const consultaData = req.body;
     
+    // Logging detallado para debugging
+    console.log('📝 POST /api/consultas - Datos recibidos:');
+    console.log('   Body:', JSON.stringify(consultaData, null, 2));
+    console.log('   Tipo de titulo:', typeof consultaData.titulo);
+    console.log('   Tipo de sql_codigo:', typeof consultaData.sql_codigo);
+    
     // Validaciones básicas
     if (!consultaData.titulo || !consultaData.sql_codigo) {
+      console.log('❌ Validación falló - titulo o sql_codigo vacío');
       return res.status(400).json({
         success: false,
         message: 'Título y código SQL son requeridos'
       });
     }
     
+    console.log('✅ Validación pasada, creando consulta...');
     const nuevaConsulta = await ConsultaModel.create(consultaData);
+    console.log('✅ Consulta creada exitosamente:', nuevaConsulta.id);
     
     res.status(201).json({
       success: true,
@@ -67,6 +76,8 @@ router.post('/', async (req, res) => {
       message: 'Consulta creada exitosamente'
     });
   } catch (error) {
+    console.error('❌ Error en POST /api/consultas:', error.message);
+    console.error('❌ Stack trace:', error.stack);
     res.status(500).json({
       success: false,
       message: error.message

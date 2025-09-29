@@ -70,17 +70,28 @@ class ConsultaModel {
     const connection = await pool.getConnection();
     
     try {
+      console.log('🔧 ConsultaModel.create - Iniciando transacción...');
       await connection.beginTransaction();
       
       const { titulo, descripcion, sql_codigo, autor, etiquetas = [], padre_id = null, favorito = false } = consultaData;
       
+      console.log('🔧 ConsultaModel.create - Datos extraídos:');
+      console.log('   titulo:', titulo);
+      console.log('   descripcion:', descripcion);
+      console.log('   sql_codigo:', sql_codigo?.substring(0, 50) + '...');
+      console.log('   autor:', autor);
+      console.log('   favorito:', favorito);
+      console.log('   padre_id:', padre_id);
+      
       // Insertar consulta
+      console.log('🔧 ConsultaModel.create - Ejecutando INSERT...');
       const [result] = await connection.execute(
         'INSERT INTO consultas (titulo, descripcion, sql_codigo, autor, padre_id, favorito) VALUES (?, ?, ?, ?, ?, ?)',
         [titulo, descripcion, sql_codigo, autor, padre_id, favorito]
       );
       
       const consultaId = result.insertId;
+      console.log('🔧 ConsultaModel.create - INSERT exitoso, ID:', consultaId);
       
       // Guardar primera versión
       await connection.execute(
