@@ -2,12 +2,44 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 async function initializeDatabase() {
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    port: process.env.DB_PORT || 3306
-  });
+  console.log('🔄 Inicializando base de datos Railway...');
+  
+  let connection;
+  
+  // Usar MYSQL_URL si está disponible (configuración Railway)
+  if (process.env.MYSQL_URL) {
+    console.log('✅ Usando MYSQL_URL para inicialización');
+    
+    // Parsear MYSQL_URL
+    const regex = /mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/;
+    const match = process.env.MYSQL_URL.match(regex);
+    
+    if (!match) {
+      throw new Error('MYSQL_URL tiene formato inválido');
+    }
+    
+    connection = await mysql.createConnection({
+      host: match[3],
+      user: match[1], 
+      password: match[2],
+      port: parseInt(match[4]),
+      database: match[5]
+    });
+    
+    console.log('📊 Conectando a:', match[3]);
+    console.log('📊 Base de datos:', match[5]);
+    
+  } else {
+    console.log('⚠️ MYSQL_URL no disponible, usando variables individuales');
+    
+    connection = await mysql.createConnection({
+      host: process.env.MYSQLHOST || process.env.DB_HOST || 'localhost',
+      user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
+      password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '',
+      port: parseInt(process.env.MYSQLPORT || process.env.DB_PORT || '3306'),
+      database: process.env.MYSQL_DATABASE || process.env.MYSQLDATABASE || process.env.DB_NAME || 'railway'
+    });
+  }
 
   try {
     console.log('🔄 Inicializando base de datos...');
