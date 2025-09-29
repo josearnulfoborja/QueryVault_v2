@@ -152,6 +152,18 @@ async function loadQueries(filtro = '') {
 
 async function saveQuery(queryData) {
     try {
+        // DEBUGGING: Primero probamos enviar los datos al endpoint de prueba
+        console.log('🧪 DEBUGGING: Enviando datos a test-post:', queryData);
+        try {
+            const testResponse = await apiRequest('/test-post', {
+                method: 'POST',
+                body: JSON.stringify(queryData)
+            });
+            console.log('🧪 DEBUGGING: Respuesta de test-post:', testResponse);
+        } catch (testError) {
+            console.error('🧪 DEBUGGING: Error en test-post:', testError);
+        }
+        
         if (isEditing && currentQuery) {
             const response = await apiRequest(`/consultas/${currentQuery.id}`, {
                 method: 'PUT',

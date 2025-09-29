@@ -143,7 +143,8 @@ app.get('/api', (req, res) => {
       'force-recreate-db': '/api/force-recreate-db (GET/POST) - Eliminar y recrear tablas',
       'emergency-recreate': '/api/emergency-recreate (GET) - Recreación de emergencia sin token',
       'diagnose-error': '/api/diagnose-error (GET) - Diagnosticar errores de consultas',
-      'clean-table': '/api/clean-table (GET) - Limpiar campos innecesarios'
+      'clean-table': '/api/clean-table (GET) - Limpiar campos innecesarios',
+      'test-post': '/api/test-post (POST) - Probar recepción de datos'
     },
     status: 'Railway deployment ready',
     database: 'MySQL on Railway'
@@ -278,6 +279,31 @@ app.get('/api/diagnose-error', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error durante el diagnóstico',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint de prueba para verificar recepción de datos POST
+app.post('/api/test-post', async (req, res) => {
+  try {
+    console.log('🧪 TEST POST - Headers:', req.headers);
+    console.log('🧪 TEST POST - Body:', JSON.stringify(req.body, null, 2));
+    console.log('🧪 TEST POST - Content-Type:', req.headers['content-type']);
+    
+    res.json({
+      success: true,
+      message: 'Datos recibidos correctamente',
+      receivedData: req.body,
+      headers: req.headers,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en test-post:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en test-post',
       error: error.message
     });
   }
