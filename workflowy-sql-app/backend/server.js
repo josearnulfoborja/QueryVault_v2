@@ -140,7 +140,8 @@ app.get('/api', (req, res) => {
       consultas: '/api/consultas',
       'db-status': '/api/db-status (GET) - Ver estado de tablas',
       'reinit-db': '/api/reinit-db (GET/POST) - Reinicializar BD',
-      'force-recreate-db': '/api/force-recreate-db (GET/POST) - Eliminar y recrear tablas'
+      'force-recreate-db': '/api/force-recreate-db (GET/POST) - Eliminar y recrear tablas',
+      'emergency-recreate': '/api/emergency-recreate (GET) - Recreación de emergencia sin token'
     },
     status: 'Railway deployment ready',
     database: 'MySQL on Railway'
@@ -165,6 +166,63 @@ app.post('/api/force-recreate-db', async (req, res) => {
 // Endpoint GET para eliminación y recreación (más fácil para acceso manual)
 app.get('/api/force-recreate-db', async (req, res) => {
   await handleForceRecreateDB(req, res);
+});
+
+// Endpoint temporal para recreación sin token (SOLO PARA EMERGENCIA)
+app.get('/api/emergency-recreate', async (req, res) => {
+  try {
+    console.log('🆘 EMERGENCIA: Recreación de BD sin token...');
+    
+    const { spawn } = require('child_process');
+    
+    // Ejecutar recreación forzada
+    await new Promise((resolve, reject) => {
+      const recreateProcess = spawn('node', ['scripts/forceRecreateDB-railway.js'], {
+        cwd: __dirname,
+        stdio: 'pipe'
+      });
+      
+      let output = '';
+      let errorOutput = '';
+      
+      recreateProcess.stdout.on('data', (data) => {
+        const message = data.toString();
+        console.log(message);
+        output += message;
+      });
+      
+      recreateProcess.stderr.on('data', (data) => {
+        const message = data.toString();
+        console.error(message);
+        errorOutput += message;
+      });
+      
+      recreateProcess.on('close', (code) => {
+        if (code === 0) {
+          console.log('✅ Recreación de emergencia completada');
+          resolve();
+        } else {
+          console.error('❌ Error en recreación de emergencia');
+          reject(new Error(`Recreación de emergencia falló: ${errorOutput}`));
+        }
+      });
+    });
+    
+    res.json({
+      success: true,
+      message: 'EMERGENCIA: Base de datos recreada correctamente',
+      timestamp: new Date().toISOString(),
+      note: 'Todas las tablas fueron eliminadas y recreadas con sql_codigo'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en recreación de emergencia:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error durante la recreación de emergencia',
+      error: error.message
+    });
+  }
 });
 
 // Endpoint para verificar estado de tablas
