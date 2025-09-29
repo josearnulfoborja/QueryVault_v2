@@ -4,12 +4,24 @@ require('dotenv').config();
 console.log('🔄 CONFIGURACIÓN MYSQL SIMPLE Y DIRECTA');
 
 // Usar variables directas de Railway (las que vimos en la imagen)
+// Configuración robusta con validación de puertos
+let mysqlPort = 3306; // Puerto por defecto de MySQL
+if (process.env.MYSQLPORT) {
+    const envPort = parseInt(process.env.MYSQLPORT, 10);
+    if (envPort > 0 && envPort <= 65535) {
+        mysqlPort = envPort;
+    } else {
+        console.warn('⚠️ MYSQLPORT inválido:', process.env.MYSQLPORT);
+        console.log('🔄 Usando puerto MySQL por defecto:', mysqlPort);
+    }
+}
+
 const dbConfig = {
     host: process.env.MYSQLHOST || 'localhost',
     user: process.env.MYSQLUSER || 'root', 
     password: process.env.MYSQLPASSWORD || '',
     database: process.env.MYSQL_DATABASE || 'railway',
-    port: parseInt(process.env.MYSQLPORT) || 3306,
+    port: mysqlPort,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0

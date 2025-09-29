@@ -8,7 +8,19 @@ const { testConnection } = require('./config/database-simple');
 const consultasRoutes = require('./routes/consultas');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+
+// Configuración robusta del puerto
+let PORT = 3000; // Puerto por defecto
+if (process.env.PORT) {
+    const envPort = parseInt(process.env.PORT, 10);
+    if (envPort > 0 && envPort <= 65535) {
+        PORT = envPort;
+    } else {
+        console.warn('⚠️ PORT inválido en variables de entorno:', process.env.PORT);
+        console.log('🔄 Usando puerto por defecto:', PORT);
+    }
+}
+console.log('🚀 Servidor configurado para puerto:', PORT);
 
 // Configuración de CORS más específica y dinámica
 const corsOptions = {

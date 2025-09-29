@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "init-db": "node scripts/initDatabase.js"
+    "init-db": "node scripts/initDatabase.js",
+    "validate-env": "node scripts/validateEnv.js",
+    "prestart": "node scripts/validateEnv.js"
   },
   "keywords": [
     "nodejs",
