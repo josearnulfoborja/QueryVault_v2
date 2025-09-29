@@ -75,13 +75,47 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../src/index.html'));
 });
 
-// Ruta de salud para monitoreo
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    service: 'QueryVault Backend'
-  });
+// Ruta de salud para monitoreo - Railway compatible
+app.get('/health', async (req, res) => {
+  try {
+    // Verificar conexión a base de datos si está configurada
+    let dbStatus = 'not configured';
+    if (process.env.DB_HOST) {
+      try {
+        const { testConnection } = require('./config/database');
+        const dbConnected = await testConnection();
+        dbStatus = dbConnected ? 'connected' : 'disconnected';
+      } catch (dbError) {
+        console.warn('Database health check failed:', dbError.message);
+        dbStatus = 'error';
+      }
+    }
+
+    res.status(200).json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      service: 'QueryVault Backend',
+      database: dbStatus,
+      environment: process.env.NODE_ENV || 'development',
+      uptime: process.uptime()
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'ERROR',
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
+});
+
+// Endpoint de readiness para Railway
+app.get('/ready', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// Endpoint simple para verificar que el servidor responde
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
 });
 
 // API info
@@ -122,23 +156,45 @@ app.use('*', (req, res, next) => {
 // Iniciar servidor
 async function startServer() {
   try {
-    // Probar conexión a la base de datos
-    const dbConnected = await testConnection();
+    // En producción, no fallar si no hay base de datos configurada
+    const isProduction = process.env.NODE_ENV === 'production';
     
-    if (!dbConnected) {
-      console.error('❌ No se pudo conectar a la base de datos. Asegúrate de que MySQL esté corriendo y la configuración sea correcta.');
-      process.exit(1);
+    if (process.env.DB_HOST) {
+      try {
+        const dbConnected = await testConnection();
+        if (dbConnected) {
+          console.log('✅ Conexión a base de datos establecida');
+        } else {
+          console.warn('⚠️ No se pudo conectar a la base de datos');
+          if (!isProduction) {
+            console.error('❌ Deteniendo servidor en desarrollo por falta de DB');
+            process.exit(1);
+          }
+        }
+      } catch (dbError) {
+        console.warn('⚠️ Error al conectar con la base de datos:', dbError.message);
+        if (!isProduction) {
+          console.error('❌ Deteniendo servidor en desarrollo por error de DB');
+          process.exit(1);
+        }
+      }
+    } else {
+      console.log('ℹ️ Base de datos no configurada - funcionando sin persistencia');
     }
     
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log('🚀 Servidor iniciado correctamente');
-      console.log(`📍 URL: http://localhost:${PORT}`);
-      console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-      console.log(`📊 API consultas: http://localhost:${PORT}/api/consultas`);
-      console.log('📝 Para inicializar la base de datos ejecuta: npm run init-db');
+      console.log(`📍 Puerto: ${PORT}`);
+      console.log(`🏥 Health check: /health, /ready, /ping`);
+      console.log(`📊 API consultas: /api/consultas`);
+      console.log('✅ Servidor listo para recibir conexiones');
+      
+      // Log adicional para Railway
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Database configured: ${process.env.DB_HOST ? 'Yes' : 'No'}`);
     });
   } catch (error) {
-    console.error('❌ Error al iniciar el servidor:', error);
+    console.error('❌ Error crítico al iniciar el servidor:', error);
     process.exit(1);
   }
 }

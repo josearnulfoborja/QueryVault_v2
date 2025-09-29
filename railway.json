@@ -5,6 +5,8 @@
   },
   "deploy": {
     "startCommand": "node workflowy-sql-app/backend/server.js",
-    "healthcheckPath": "/health"
+    "healthcheckPath": "/ready",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE"
   }
 }
