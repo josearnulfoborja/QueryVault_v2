@@ -8,6 +8,8 @@
     "dev": "nodemon server.js",
     "init-db": "node scripts/initDatabase.js",
     "validate-env": "node scripts/validateEnv.js",
+    "diagnose-mysql": "node scripts/diagnose-mysql.js",
+    "test-mysql": "node scripts/test-mysql.js",
     "prestart": "node scripts/validateEnv.js"
   },
   "keywords": [
