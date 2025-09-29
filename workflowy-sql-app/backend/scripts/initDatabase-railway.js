@@ -73,6 +73,67 @@ async function initializeDatabase() {
     
     console.log('✅ Tabla consultas creada/verificada');
 
+    console.log('\n🔄 Creando tabla etiquetas...');
+    
+    // Crear tabla etiquetas
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS etiquetas (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nombre VARCHAR(100) NOT NULL UNIQUE,
+        color VARCHAR(7) DEFAULT '#007bff',
+        descripcion TEXT,
+        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        activo BOOLEAN DEFAULT TRUE,
+        INDEX idx_nombre (nombre),
+        INDEX idx_activo (activo)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    
+    console.log('✅ Tabla etiquetas creada/verificada');
+
+    console.log('\n🔄 Creando tabla consulta_etiqueta...');
+    
+    // Crear tabla de relación consulta_etiqueta
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS consulta_etiqueta (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        consulta_id INT NOT NULL,
+        etiqueta_id INT NOT NULL,
+        fecha_asignacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (consulta_id) REFERENCES consultas(id) ON DELETE CASCADE,
+        FOREIGN KEY (etiqueta_id) REFERENCES etiquetas(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_consulta_etiqueta (consulta_id, etiqueta_id),
+        INDEX idx_consulta_id (consulta_id),
+        INDEX idx_etiqueta_id (etiqueta_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    
+    console.log('✅ Tabla consulta_etiqueta creada/verificada');
+
+    console.log('\n🔄 Creando tabla versiones_consulta...');
+    
+    // Crear tabla versiones_consulta
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS versiones_consulta (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        consulta_id INT NOT NULL,
+        version_numero INT NOT NULL DEFAULT 1,
+        titulo VARCHAR(255) NOT NULL,
+        descripcion TEXT,
+        sql_query LONGTEXT NOT NULL,
+        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        creado_por VARCHAR(100) DEFAULT 'system',
+        comentarios TEXT,
+        FOREIGN KEY (consulta_id) REFERENCES consultas(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_consulta_version (consulta_id, version_numero),
+        INDEX idx_consulta_id (consulta_id),
+        INDEX idx_version_numero (version_numero),
+        INDEX idx_fecha_creacion (fecha_creacion)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    
+    console.log('✅ Tabla versiones_consulta creada/verificada');
+
     console.log('\n🔄 Insertando datos de ejemplo...');
     
     // Verificar si ya hay datos
@@ -110,22 +171,101 @@ async function initializeDatabase() {
       }
       
       console.log(`✅ Insertadas ${consultasEjemplo.length} consultas de ejemplo`);
+      
+      // Insertar etiquetas de ejemplo
+      console.log('\n🔄 Insertando etiquetas de ejemplo...');
+      const etiquetasEjemplo = [
+        { nombre: 'SQL Básico', color: '#28a745', descripcion: 'Consultas SQL básicas y fundamentales' },
+        { nombre: 'Reportes', color: '#007bff', descripcion: 'Consultas para generar reportes' },
+        { nombre: 'Usuarios', color: '#ffc107', descripcion: 'Consultas relacionadas con usuarios' },
+        { nombre: 'Ventas', color: '#dc3545', descripcion: 'Consultas de ventas y comerciales' },
+        { nombre: 'Productos', color: '#6f42c1', descripcion: 'Consultas de productos e inventario' },
+        { nombre: 'Análisis', color: '#20c997', descripcion: 'Consultas de análisis de datos' }
+      ];
+      
+      for (const etiqueta of etiquetasEjemplo) {
+        await connection.execute(
+          'INSERT INTO etiquetas (nombre, color, descripcion) VALUES (?, ?, ?)',
+          [etiqueta.nombre, etiqueta.color, etiqueta.descripcion]
+        );
+      }
+      
+      console.log(`✅ Insertadas ${etiquetasEjemplo.length} etiquetas de ejemplo`);
+      
+      // Asignar etiquetas a consultas de ejemplo
+      console.log('\n🔄 Asignando etiquetas a consultas...');
+      const asignacionesEjemplo = [
+        { consulta_id: 1, etiqueta_id: 3 }, // Usuarios activos -> Usuarios
+        { consulta_id: 1, etiqueta_id: 1 }, // Usuarios activos -> SQL Básico
+        { consulta_id: 2, etiqueta_id: 4 }, // Ventas por mes -> Ventas
+        { consulta_id: 2, etiqueta_id: 2 }, // Ventas por mes -> Reportes
+        { consulta_id: 3, etiqueta_id: 5 }, // Productos más vendidos -> Productos
+        { consulta_id: 3, etiqueta_id: 6 }  // Productos más vendidos -> Análisis
+      ];
+      
+      for (const asignacion of asignacionesEjemplo) {
+        await connection.execute(
+          'INSERT INTO consulta_etiqueta (consulta_id, etiqueta_id) VALUES (?, ?)',
+          [asignacion.consulta_id, asignacion.etiqueta_id]
+        );
+      }
+      
+      console.log(`✅ Creadas ${asignacionesEjemplo.length} asignaciones de etiquetas`);
+      
+      // Crear versiones iniciales para las consultas
+      console.log('\n🔄 Creando versiones iniciales de consultas...');
+      const [consultasCreadas] = await connection.execute('SELECT id, titulo, descripcion, sql_query FROM consultas');
+      
+      for (const consulta of consultasCreadas) {
+        await connection.execute(
+          'INSERT INTO versiones_consulta (consulta_id, version_numero, titulo, descripcion, sql_query, comentarios) VALUES (?, ?, ?, ?, ?, ?)',
+          [consulta.id, 1, consulta.titulo, consulta.descripcion, consulta.sql_query, 'Versión inicial de la consulta']
+        );
+      }
+      
+      console.log(`✅ Creadas ${consultasCreadas.length} versiones iniciales`);
+      
     } else {
       console.log(`ℹ️ Ya existen ${existingCount} consultas en la base de datos`);
+      
+      // Verificar si las otras tablas tienen datos
+      const [etiquetasCount] = await connection.execute('SELECT COUNT(*) as count FROM etiquetas');
+      const [versionesCount] = await connection.execute('SELECT COUNT(*) as count FROM versiones_consulta');
+      
+      console.log(`ℹ️ Etiquetas existentes: ${etiquetasCount[0].count}`);
+      console.log(`ℹ️ Versiones existentes: ${versionesCount[0].count}`);
     }
 
-    // Verificar la estructura final
-    console.log('\n🔍 Verificando estructura de la tabla...');
-    const [columns] = await connection.execute('DESCRIBE consultas');
-    console.log('📊 Columnas de la tabla consultas:');
-    columns.forEach(col => {
-      const nullInfo = col.Null === 'NO' ? 'NOT NULL' : '';
-      const keyInfo = col.Key ? `(${col.Key})` : '';
-      console.log(`  - ${col.Field}: ${col.Type} ${nullInfo} ${keyInfo}`);
-    });
+    // Verificar la estructura final de todas las tablas
+    console.log('\n🔍 Verificando estructura de las tablas...');
+    
+    const tablas = ['consultas', 'etiquetas', 'consulta_etiqueta', 'versiones_consulta'];
+    
+    for (const tabla of tablas) {
+      try {
+        const [columns] = await connection.execute(`DESCRIBE ${tabla}`);
+        console.log(`\n📊 Tabla ${tabla}:`);
+        columns.forEach(col => {
+          const nullInfo = col.Null === 'NO' ? 'NOT NULL' : '';
+          const keyInfo = col.Key ? `(${col.Key})` : '';
+          console.log(`  - ${col.Field}: ${col.Type} ${nullInfo} ${keyInfo}`);
+        });
+        
+        // Contar registros
+        const [countResult] = await connection.execute(`SELECT COUNT(*) as count FROM ${tabla}`);
+        console.log(`  📈 Registros: ${countResult[0].count}`);
+      } catch (error) {
+        console.error(`❌ Error verificando tabla ${tabla}:`, error.message);
+      }
+    }
 
     console.log('\n🎉 ¡INICIALIZACIÓN COMPLETADA EXITOSAMENTE!');
-    console.log('La aplicación QueryVault está lista para usarse.');
+    console.log('La aplicación QueryVault está lista para usarse con todas sus tablas:');
+    console.log('  ✅ consultas - Tabla principal de consultas SQL');
+    console.log('  ✅ etiquetas - Sistema de etiquetado');
+    console.log('  ✅ consulta_etiqueta - Relación consultas-etiquetas');
+    console.log('  ✅ versiones_consulta - Control de versiones');
+    
     
     await connection.end();
     
