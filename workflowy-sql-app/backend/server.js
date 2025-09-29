@@ -171,27 +171,57 @@ async function startServer() {
     // En producción, no fallar si no hay base de datos configurada
     const isProduction = process.env.NODE_ENV === 'production';
     
-    if (process.env.DB_HOST) {
-      try {
-        const dbConnected = await testConnection();
-        if (dbConnected) {
-          console.log('✅ Conexión a base de datos establecida');
-        } else {
-          console.warn('⚠️ No se pudo conectar a la base de datos');
-          if (!isProduction) {
-            console.error('❌ Deteniendo servidor en desarrollo por falta de DB');
-            process.exit(1);
+    console.log('🔄 Verificando conexión a base de datos...');
+    
+    try {
+      const dbConnected = await testConnection();
+      if (dbConnected) {
+        console.log('✅ Conexión a base de datos establecida');
+        
+        // Auto-inicializar BD si estamos en Railway y no hay tablas
+        if (process.env.MYSQL_URL) {
+          console.log('🔄 Verificando si necesita inicialización de BD...');
+          try {
+            const { pool } = require('./config/database-url-final');
+            const [tables] = await pool.execute("SHOW TABLES LIKE 'consultas'");
+            
+            if (tables.length === 0) {
+              console.log('📊 Tabla consultas no existe, inicializando automáticamente...');
+              const { spawn } = require('child_process');
+              
+              const initProcess = spawn('node', ['scripts/initDatabase-railway.js'], {
+                cwd: __dirname,
+                stdio: 'inherit'
+              });
+              
+              initProcess.on('close', (code) => {
+                if (code === 0) {
+                  console.log('✅ Base de datos inicializada automáticamente');
+                } else {
+                  console.warn('⚠️ Error en inicialización automática de BD');
+                }
+              });
+            } else {
+              console.log('✅ Tabla consultas ya existe, BD lista');
+            }
+          } catch (initError) {
+            console.warn('⚠️ Error verificando/inicializando BD:', initError.message);
           }
         }
-      } catch (dbError) {
-        console.warn('⚠️ Error al conectar con la base de datos:', dbError.message);
+        
+      } else {
+        console.warn('⚠️ No se pudo conectar a la base de datos');
         if (!isProduction) {
-          console.error('❌ Deteniendo servidor en desarrollo por error de DB');
+          console.error('❌ Deteniendo servidor en desarrollo por falta de DB');
           process.exit(1);
         }
       }
-    } else {
-      console.log('ℹ️ Base de datos no configurada - funcionando sin persistencia');
+    } catch (dbError) {
+      console.warn('⚠️ Error al conectar con la base de datos:', dbError.message);
+      if (!isProduction) {
+        console.error('❌ Deteniendo servidor en desarrollo por error de DB');
+        process.exit(1);
+      }
     }
     
     app.listen(PORT, '0.0.0.0', () => {
