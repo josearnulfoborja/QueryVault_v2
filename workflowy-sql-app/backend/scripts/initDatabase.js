@@ -13,7 +13,7 @@ async function initializeDatabase() {
     console.log('🔄 Inicializando base de datos...');
 
     // Crear la base de datos si no existe
-    await connection.execute(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME || 'queryvaul'}`);
+    await connection.execute(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME || 'queryvault_db'}`);
     console.log('✅ Base de datos creada/verificada');
 
     // Cerrar conexión y crear nueva conexión con la base de datos
@@ -24,7 +24,7 @@ async function initializeDatabase() {
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'queryvaul',
+      database: process.env.DB_NAME || 'queryvault_db',
       port: process.env.DB_PORT || 3306
     });
 

@@ -1,31 +1,43 @@
 {
-  "name": "workflowy-sql-app",
+  "name": "queryvault",
   "version": "1.0.0",
-  "description": "A web application that combines hierarchical node structure with enriched message visualization for SQL code snippets.",
-  "main": "src/index.html",
+  "description": "Gestor de Consultas SQL - Una aplicación web para organizar y gestionar consultas SQL",
+  "main": "backend/server.js",
   "scripts": {
-    "start": "live-server src",
-    "build": "echo 'Build step not defined'",
-    "test": "echo 'Test step not defined'"
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "build": "echo 'Build completed successfully'",
+    "init-db": "node backend/scripts/initDatabase.js"
   },
   "keywords": [
-    "workflowy",
     "sql",
-    "syntax-highlighting",
-    "web-app"
+    "query",
+    "manager",
+    "nodejs",
+    "express",
+    "mysql"
   ],
-  "author": "Your Name",
+  "author": "Jose Arnulfo Borja",
   "license": "MIT",
-  "dependencies": {
-    "prismjs": "^1.25.0"
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   },
-  "devDependencies": {},
-  "homepage": "https://github.com/yourusername/workflowy-sql-app",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/workflowy-sql-app.git"
+    "url": "git+https://github.com/josearnulfoborja/QueryVault_v2.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/workflowy-sql-app/issues"
-  }
+    "url": "https://github.com/josearnulfoborja/QueryVault_v2/issues"
+  },
+  "homepage": "https://github.com/josearnulfoborja/QueryVault_v2#readme"
 }

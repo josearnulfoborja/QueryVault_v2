@@ -37,6 +37,7 @@ const uiRenderer = (() => {
 
         const toggleButton = document.createElement('button');
         toggleButton.innerText = 'Toggle Code/Text';
+        toggleButton.classList.add('secondary-btn');
         toggleButton.addEventListener('click', () => {
             if (textArea.style.display === 'none') {
                 textArea.style.display = 'block';
@@ -48,27 +49,51 @@ const uiRenderer = (() => {
             }
         });
 
+        const copyButton = document.createElement('button');
+        copyButton.innerHTML = '📋 Copy SQL';
+        copyButton.classList.add('copy-btn');
+        copyButton.title = 'Copy SQL code to clipboard';
+        copyButton.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(node.content);
+                showCopySuccess(copyButton);
+            } catch (err) {
+                console.warn('Clipboard API not available, using fallback method:', err.message);
+                // Fallback for older browsers
+                fallbackCopyToClipboard(node.content);
+                showCopySuccess(copyButton);
+            }
+        });
+
         const insertButton = document.createElement('button');
         insertButton.innerText = 'Insert';
+        insertButton.classList.add('primary-btn');
         insertButton.addEventListener('click', () => {
             if (node.title.trim() === '' && node.content.trim() === '') {
                 alert('Node cannot be empty');
-                return;
             }
             // Insert logic here
         });
 
         const cancelButton = document.createElement('button');
         cancelButton.innerText = 'Cancel';
+        cancelButton.classList.add('secondary-btn');
         cancelButton.addEventListener('click', () => {
             // Cancel logic here
         });
 
         contentArea.appendChild(textArea);
         contentArea.appendChild(codeBlock);
-        contentArea.appendChild(toggleButton);
-        contentArea.appendChild(insertButton);
-        contentArea.appendChild(cancelButton);
+        
+        // Create button container
+        const buttonContainer = document.createElement('div');
+        buttonContainer.classList.add('node-actions');
+        buttonContainer.appendChild(toggleButton);
+        buttonContainer.appendChild(copyButton);
+        buttonContainer.appendChild(insertButton);
+        buttonContainer.appendChild(cancelButton);
+        
+        contentArea.appendChild(buttonContainer);
 
         div.appendChild(title);
         div.appendChild(contentArea);
@@ -87,6 +112,31 @@ const uiRenderer = (() => {
 
     const toggleEditMode = (node) => {
         // Logic to toggle edit mode for a specific node
+    };
+
+    // Helper functions for copy functionality
+    const showCopySuccess = (button) => {
+        const originalText = button.innerHTML;
+        button.innerHTML = '✅ Copied!';
+        button.style.backgroundColor = 'var(--success-color)';
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.style.backgroundColor = '';
+        }, 2000);
+    };
+
+    const fallbackCopyToClipboard = (text) => {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
     };
 
     return {

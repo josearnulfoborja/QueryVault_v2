@@ -23,9 +23,9 @@ class ConsultaModel {
       const params = [];
       
       if (filtro) {
-        query += ` WHERE c.titulo LIKE ? OR c.descripcion LIKE ? OR c.sql_codigo LIKE ? OR c.autor LIKE ?`;
+        query += ` WHERE c.titulo LIKE ? OR c.descripcion LIKE ? OR c.sql_codigo LIKE ? OR c.autor LIKE ? OR e.nombre LIKE ?`;
         const filtroParam = `%${filtro}%`;
-        params.push(filtroParam, filtroParam, filtroParam, filtroParam);
+        params.push(filtroParam, filtroParam, filtroParam, filtroParam, filtroParam);
       }
       
       query += ` GROUP BY c.id ORDER BY c.fecha_creacion DESC`;
