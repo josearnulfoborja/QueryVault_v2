@@ -138,23 +138,86 @@ app.get('/api', (req, res) => {
     endpoints: {
       health: '/health',
       consultas: '/api/consultas',
-      'reinit-db': '/api/reinit-db (POST)'
-    }
+      'db-status': '/api/db-status (GET) - Ver estado de tablas',
+      'reinit-db': '/api/reinit-db (GET/POST) - Reinicializar BD'
+    },
+    status: 'Railway deployment ready',
+    database: 'MySQL on Railway'
   });
 });
 
 // Endpoint para reinicializar BD (solo en desarrollo o con token especial)
 app.post('/api/reinit-db', async (req, res) => {
+  await handleReinitDB(req, res);
+});
+
+// Endpoint GET para reinicialización (más fácil para acceso manual)
+app.get('/api/reinit-db', async (req, res) => {
+  await handleReinitDB(req, res);
+});
+
+// Endpoint para verificar estado de tablas
+app.get('/api/db-status', async (req, res) => {
+  try {
+    const { pool } = require('./config/database-url-final');
+    
+    const tablasEsperadas = ['consultas', 'etiquetas', 'consulta_etiqueta', 'versiones_consulta'];
+    const estadoTablas = {};
+    
+    for (const tabla of tablasEsperadas) {
+      try {
+        const [exists] = await pool.execute(`SHOW TABLES LIKE '${tabla}'`);
+        const [count] = await pool.execute(`SELECT COUNT(*) as count FROM ${tabla}`);
+        
+        estadoTablas[tabla] = {
+          exists: exists.length > 0,
+          records: exists.length > 0 ? count[0].count : 0
+        };
+      } catch (error) {
+        estadoTablas[tabla] = {
+          exists: false,
+          error: error.message,
+          records: 0
+        };
+      }
+    }
+    
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      database: 'railway',
+      tables: estadoTablas,
+      summary: {
+        allTablesExist: Object.values(estadoTablas).every(t => t.exists),
+        totalTables: Object.keys(estadoTablas).length,
+        existingTables: Object.values(estadoTablas).filter(t => t.exists).length
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error verificando estado de BD',
+      error: error.message
+    });
+  }
+});
+
+// Función común para manejar la reinicialización
+async function handleReinitDB(req, res) {
   try {
     const isProduction = process.env.NODE_ENV === 'production';
     
     // En producción, requerir token especial
     if (isProduction) {
-      const authToken = req.headers['x-reinit-token'] || req.body.token;
+      const authToken = req.headers['x-reinit-token'] || 
+                        req.body?.token || 
+                        req.query?.token;
       if (authToken !== process.env.REINIT_TOKEN) {
         return res.status(401).json({
           success: false,
-          message: 'Token de autorización requerido'
+          message: 'Token de autorización requerido para reinicialización en producción',
+          hint: 'Agrega ?token=TU_TOKEN a la URL o usa header x-reinit-token'
         });
       }
     }
@@ -199,7 +262,8 @@ app.post('/api/reinit-db', async (req, res) => {
     res.json({
       success: true,
       message: 'Base de datos reinicializada correctamente',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      note: 'Todas las tablas fueron recreadas con datos de ejemplo'
     });
     
   } catch (error) {
@@ -210,7 +274,7 @@ app.post('/api/reinit-db', async (req, res) => {
       error: error.message
     });
   }
-});
+}
 
 // Middleware de manejo de errores
 app.use((error, req, res, next) => {
