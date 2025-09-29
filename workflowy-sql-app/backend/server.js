@@ -137,9 +137,79 @@ app.get('/api', (req, res) => {
     version: '1.0.0',
     endpoints: {
       health: '/health',
-      consultas: '/api/consultas'
+      consultas: '/api/consultas',
+      'reinit-db': '/api/reinit-db (POST)'
     }
   });
+});
+
+// Endpoint para reinicializar BD (solo en desarrollo o con token especial)
+app.post('/api/reinit-db', async (req, res) => {
+  try {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // En producción, requerir token especial
+    if (isProduction) {
+      const authToken = req.headers['x-reinit-token'] || req.body.token;
+      if (authToken !== process.env.REINIT_TOKEN) {
+        return res.status(401).json({
+          success: false,
+          message: 'Token de autorización requerido'
+        });
+      }
+    }
+    
+    console.log('🔄 Iniciando reinicialización manual de BD...');
+    
+    const { spawn } = require('child_process');
+    
+    // Ejecutar reinicialización
+    await new Promise((resolve, reject) => {
+      const initProcess = spawn('node', ['scripts/initDatabase-railway.js'], {
+        cwd: __dirname,
+        stdio: 'pipe'
+      });
+      
+      let output = '';
+      let errorOutput = '';
+      
+      initProcess.stdout.on('data', (data) => {
+        const message = data.toString();
+        console.log(message);
+        output += message;
+      });
+      
+      initProcess.stderr.on('data', (data) => {
+        const message = data.toString();
+        console.error(message);
+        errorOutput += message;
+      });
+      
+      initProcess.on('close', (code) => {
+        if (code === 0) {
+          console.log('✅ Reinicialización completada');
+          resolve();
+        } else {
+          console.error('❌ Error en reinicialización');
+          reject(new Error(`Reinicialización falló: ${errorOutput}`));
+        }
+      });
+    });
+    
+    res.json({
+      success: true,
+      message: 'Base de datos reinicializada correctamente',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en reinicialización:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error durante la reinicialización',
+      error: error.message
+    });
+  }
 });
 
 // Middleware de manejo de errores
@@ -187,22 +257,69 @@ async function startServer() {
             
             if (tables.length === 0) {
               console.log('📊 Tabla consultas no existe, inicializando automáticamente...');
-              const { spawn } = require('child_process');
+              console.log('⏳ Esperando inicialización completa antes de continuar...');
               
-              const initProcess = spawn('node', ['scripts/initDatabase-railway.js'], {
-                cwd: __dirname,
-                stdio: 'inherit'
-              });
-              
-              initProcess.on('close', (code) => {
-                if (code === 0) {
-                  console.log('✅ Base de datos inicializada automáticamente');
-                } else {
-                  console.warn('⚠️ Error en inicialización automática de BD');
+              // Importar y ejecutar la inicialización directamente (síncrono)
+              try {
+                const { spawn } = require('child_process');
+                
+                // Crear promise para esperar a que termine la inicialización
+                await new Promise((resolve, reject) => {
+                  const initProcess = spawn('node', ['scripts/initDatabase-railway.js'], {
+                    cwd: __dirname,
+                    stdio: 'inherit'
+                  });
+                  
+                  initProcess.on('close', (code) => {
+                    if (code === 0) {
+                      console.log('✅ Base de datos inicializada automáticamente');
+                      resolve();
+                    } else {
+                      console.error('❌ Error en inicialización automática de BD');
+                      reject(new Error(`Inicialización falló con código ${code}`));
+                    }
+                  });
+                  
+                  initProcess.on('error', (error) => {
+                    console.error('❌ Error ejecutando inicialización:', error);
+                    reject(error);
+                  });
+                });
+                
+                // Verificar que todas las tablas se crearon correctamente
+                console.log('🔍 Verificando que todas las tablas fueron creadas...');
+                const tablasEsperadas = ['consultas', 'etiquetas', 'consulta_etiqueta', 'versiones_consulta'];
+                
+                for (const tabla of tablasEsperadas) {
+                  const [result] = await pool.execute(`SHOW TABLES LIKE '${tabla}'`);
+                  if (result.length === 0) {
+                    throw new Error(`Tabla ${tabla} no fue creada correctamente`);
+                  }
+                  console.log(`✅ Tabla ${tabla} verificada`);
                 }
-              });
+                
+                console.log('🎉 Todas las tablas están listas y verificadas');
+                
+              } catch (initError) {
+                console.error('❌ Error durante inicialización:', initError.message);
+                if (!isProduction) {
+                  process.exit(1);
+                }
+              }
+              
             } else {
               console.log('✅ Tabla consultas ya existe, BD lista');
+              
+              // Verificar que todas las tablas existen
+              const tablasEsperadas = ['etiquetas', 'consulta_etiqueta', 'versiones_consulta'];
+              for (const tabla of tablasEsperadas) {
+                const [result] = await pool.execute(`SHOW TABLES LIKE '${tabla}'`);
+                if (result.length === 0) {
+                  console.warn(`⚠️ Tabla ${tabla} no existe, puede necesitar reinicialización`);
+                } else {
+                  console.log(`✅ Tabla ${tabla} existe`);
+                }
+              }
             }
           } catch (initError) {
             console.warn('⚠️ Error verificando/inicializando BD:', initError.message);
