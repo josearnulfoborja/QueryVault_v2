@@ -44,9 +44,12 @@ async function initializeDatabase() {
     }
 
     console.log('\n🔄 Verificando conexión...');
-    const [dbRows] = await connection.execute('SELECT DATABASE() as current_db, NOW() as timestamp');
+    const [dbRows] = await connection.execute('SELECT DATABASE() as current_db');
     console.log('✅ Conectado a base de datos:', dbRows[0].current_db);
-    console.log('⏰ Timestamp:', dbRows[0].timestamp);
+    
+    // Verificar timestamp en consulta separada
+    const [timeRows] = await connection.execute('SELECT NOW() as timestamp');
+    console.log('⏰ Timestamp:', timeRows[0].timestamp);
 
     console.log('\n🔄 Creando tabla consultas...');
     
@@ -116,7 +119,9 @@ async function initializeDatabase() {
     const [columns] = await connection.execute('DESCRIBE consultas');
     console.log('📊 Columnas de la tabla consultas:');
     columns.forEach(col => {
-      console.log(`  - ${col.Field}: ${col.Type} ${col.Null === 'NO' ? 'NOT NULL' : ''} ${col.Key ? `(${col.Key})` : ''}`);
+      const nullInfo = col.Null === 'NO' ? 'NOT NULL' : '';
+      const keyInfo = col.Key ? `(${col.Key})` : '';
+      console.log(`  - ${col.Field}: ${col.Type} ${nullInfo} ${keyInfo}`);
     });
 
     console.log('\n🎉 ¡INICIALIZACIÓN COMPLETADA EXITOSAMENTE!');

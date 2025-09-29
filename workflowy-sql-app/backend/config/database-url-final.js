@@ -98,20 +98,13 @@ async function testConnection() {
         
         console.log('✅ ¡CONEXIÓN EXITOSA A RAILWAY MYSQL!');
         
-        // Verificar estado de la base de datos
-        const [rows] = await connection.execute(`
-            SELECT 
-                DATABASE() as current_db, 
-                USER() as current_user,
-                VERSION() as mysql_version,
-                NOW() as timestamp
-        `);
+        // Verificar estado de la base de datos con consultas separadas
+        const [dbRows] = await connection.execute('SELECT DATABASE() as current_db');
+        const [timeRows] = await connection.execute('SELECT NOW() as timestamp');
         
         console.log('📊 ESTADO DE LA BASE DE DATOS:');
-        console.log('Base de datos:', rows[0].current_db);
-        console.log('Usuario conectado:', rows[0].current_user);
-        console.log('Versión MySQL:', rows[0].mysql_version);
-        console.log('Timestamp:', rows[0].timestamp);
+        console.log('Base de datos:', dbRows[0].current_db);
+        console.log('Timestamp:', timeRows[0].timestamp);
         
         connection.release();
         return true;
