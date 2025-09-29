@@ -142,7 +142,8 @@ app.get('/api', (req, res) => {
       'reinit-db': '/api/reinit-db (GET/POST) - Reinicializar BD',
       'force-recreate-db': '/api/force-recreate-db (GET/POST) - Eliminar y recrear tablas',
       'emergency-recreate': '/api/emergency-recreate (GET) - Recreación de emergencia sin token',
-      'diagnose-error': '/api/diagnose-error (GET) - Diagnosticar errores de consultas'
+      'diagnose-error': '/api/diagnose-error (GET) - Diagnosticar errores de consultas',
+      'clean-table': '/api/clean-table (GET) - Limpiar campos innecesarios'
     },
     status: 'Railway deployment ready',
     database: 'MySQL on Railway'
@@ -277,6 +278,63 @@ app.get('/api/diagnose-error', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error durante el diagnóstico',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint para limpiar campos innecesarios de la tabla
+app.get('/api/clean-table', async (req, res) => {
+  try {
+    console.log('🧹 Ejecutando limpieza de campos innecesarios...');
+    
+    const { spawn } = require('child_process');
+    
+    // Ejecutar limpieza
+    await new Promise((resolve, reject) => {
+      const cleanProcess = spawn('node', ['scripts/cleanTable-railway.js'], {
+        cwd: __dirname,
+        stdio: 'pipe'
+      });
+      
+      let output = '';
+      let errorOutput = '';
+      
+      cleanProcess.stdout.on('data', (data) => {
+        const message = data.toString();
+        console.log(message);
+        output += message;
+      });
+      
+      cleanProcess.stderr.on('data', (data) => {
+        const message = data.toString();
+        console.error(message);
+        errorOutput += message;
+      });
+      
+      cleanProcess.on('close', (code) => {
+        if (code === 0) {
+          console.log('✅ Limpieza de tabla completada');
+          resolve(output);
+        } else {
+          console.error('❌ Error en limpieza de tabla');
+          reject(new Error(`Limpieza falló: ${errorOutput}`));
+        }
+      });
+    });
+    
+    res.json({
+      success: true,
+      message: 'Limpieza de tabla completada - campos innecesarios eliminados',
+      timestamp: new Date().toISOString(),
+      note: 'Campos mantenidos: id, titulo, descripcion, sql_codigo, fecha_creacion'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error ejecutando limpieza:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error durante la limpieza de tabla',
       error: error.message
     });
   }
