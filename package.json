@@ -1,0 +1,40 @@
+{
+  "name": "queryvault-v2",
+  "version": "1.0.0",
+  "description": "QueryVault - SQL Query Management Application",
+  "main": "workflowy-sql-app/backend/server.js",
+  "scripts": {
+    "start": "node workflowy-sql-app/backend/server.js",
+    "dev": "cd workflowy-sql-app && npm run dev",
+    "build": "cd workflowy-sql-app && npm install",
+    "init-db": "cd workflowy-sql-app && npm run init-db",
+    "install-app": "cd workflowy-sql-app && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "sql",
+    "query",
+    "manager",
+    "nodejs",
+    "express",
+    "mysql"
+  ],
+  "author": "Jose Arnulfo Borja",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/josearnulfoborja/QueryVault_v2.git"
+  }
+}

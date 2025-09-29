@@ -1,0 +1,1 @@
+web: node workflowy-sql-app/backend/server.js
