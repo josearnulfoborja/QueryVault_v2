@@ -44,8 +44,17 @@ async function cleanConsultasTable() {
       console.log(`  - ${col.Field} (${col.Type})`);
     });
 
-    // Lista de campos que queremos mantener
-    const camposNecesarios = ['id', 'titulo', 'descripcion', 'sql_codigo', 'fecha_creacion'];
+    // Lista de campos que queremos mantener (según database_setup.sql)
+    const camposNecesarios = [
+      'id', 
+      'titulo', 
+      'descripcion', 
+      'sql_codigo', 
+      'fecha_creacion',
+      'favorito',
+      'padre_id', 
+      'autor'
+    ];
     
     // Lista de campos a eliminar
     const camposAEliminar = [];

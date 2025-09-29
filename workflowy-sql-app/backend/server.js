@@ -327,7 +327,7 @@ app.get('/api/clean-table', async (req, res) => {
       success: true,
       message: 'Limpieza de tabla completada - campos innecesarios eliminados',
       timestamp: new Date().toISOString(),
-      note: 'Campos mantenidos: id, titulo, descripcion, sql_codigo, fecha_creacion'
+      note: 'Campos mantenidos: id, titulo, descripcion, sql_codigo, fecha_creacion, favorito, padre_id, autor'
     });
     
   } catch (error) {
