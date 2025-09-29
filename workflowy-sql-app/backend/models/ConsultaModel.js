@@ -1,4 +1,4 @@
-const { pool } = require('../config/database');
+const { pool } = require('../config/database-debug');
 
 class ConsultaModel {
   // Obtener todas las consultas con filtro opcional
