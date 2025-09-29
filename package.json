@@ -8,7 +8,8 @@
     "build": "echo Build completed",
     "postinstall": "cd workflowy-sql-app && npm install",
     "init-db-railway": "cd workflowy-sql-app && npm run init-db",
-    "test-connection": "node -e \"require('./workflowy-sql-app/backend/config/database').testConnection().then(r => console.log('DB:', r ? 'OK' : 'FAIL'))\""
+    "test-connection": "node -e \"require('./workflowy-sql-app/backend/config/database').testConnection().then(r => console.log('DB:', r ? 'OK' : 'FAIL'))\"",
+    "diagnose": "node railway-diagnostic.js"
   },
   "engines": {
     "node": "18.x",
