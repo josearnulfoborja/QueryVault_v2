@@ -1,8 +1,0 @@
-[phases.build]
-cmds = ['npm ci --only=production']
-
-[phases.install]
-cmds = ['npm install']
-
-[start]
-cmd = 'npm start'
