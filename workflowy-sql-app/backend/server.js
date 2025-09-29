@@ -141,7 +141,8 @@ app.get('/api', (req, res) => {
       'db-status': '/api/db-status (GET) - Ver estado de tablas',
       'reinit-db': '/api/reinit-db (GET/POST) - Reinicializar BD',
       'force-recreate-db': '/api/force-recreate-db (GET/POST) - Eliminar y recrear tablas',
-      'emergency-recreate': '/api/emergency-recreate (GET) - Recreación de emergencia sin token'
+      'emergency-recreate': '/api/emergency-recreate (GET) - Recreación de emergencia sin token',
+      'diagnose-error': '/api/diagnose-error (GET) - Diagnosticar errores de consultas'
     },
     status: 'Railway deployment ready',
     database: 'MySQL on Railway'
@@ -220,6 +221,62 @@ app.get('/api/emergency-recreate', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error durante la recreación de emergencia',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint para diagnosticar errores de consultas
+app.get('/api/diagnose-error', async (req, res) => {
+  try {
+    console.log('🔍 Ejecutando diagnóstico de errores...');
+    
+    const { spawn } = require('child_process');
+    
+    // Ejecutar diagnóstico
+    await new Promise((resolve, reject) => {
+      const diagnoseProcess = spawn('node', ['scripts/diagnose-consulta-error.js'], {
+        cwd: __dirname,
+        stdio: 'pipe'
+      });
+      
+      let output = '';
+      let errorOutput = '';
+      
+      diagnoseProcess.stdout.on('data', (data) => {
+        const message = data.toString();
+        console.log(message);
+        output += message;
+      });
+      
+      diagnoseProcess.stderr.on('data', (data) => {
+        const message = data.toString();
+        console.error(message);
+        errorOutput += message;
+      });
+      
+      diagnoseProcess.on('close', (code) => {
+        if (code === 0) {
+          console.log('✅ Diagnóstico completado');
+          resolve(output);
+        } else {
+          console.error('❌ Error en diagnóstico');
+          reject(new Error(`Diagnóstico falló: ${errorOutput}`));
+        }
+      });
+    });
+    
+    res.json({
+      success: true,
+      message: 'Diagnóstico de errores completado - revisar logs del servidor',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error ejecutando diagnóstico:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error durante el diagnóstico',
       error: error.message
     });
   }
