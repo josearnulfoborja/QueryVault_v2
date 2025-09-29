@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 require('dotenv').config();
 
-const { testConnection } = require('./config/database-railway');
+const { testConnection } = require('./config/database-url-final');
 const consultasRoutes = require('./routes/consultas');
 
 const app = express();
