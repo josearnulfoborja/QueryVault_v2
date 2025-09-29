@@ -139,7 +139,8 @@ app.get('/api', (req, res) => {
       health: '/health',
       consultas: '/api/consultas',
       'db-status': '/api/db-status (GET) - Ver estado de tablas',
-      'reinit-db': '/api/reinit-db (GET/POST) - Reinicializar BD'
+      'reinit-db': '/api/reinit-db (GET/POST) - Reinicializar BD',
+      'force-recreate-db': '/api/force-recreate-db (GET/POST) - Eliminar y recrear tablas'
     },
     status: 'Railway deployment ready',
     database: 'MySQL on Railway'
@@ -154,6 +155,16 @@ app.post('/api/reinit-db', async (req, res) => {
 // Endpoint GET para reinicialización (más fácil para acceso manual)
 app.get('/api/reinit-db', async (req, res) => {
   await handleReinitDB(req, res);
+});
+
+// Endpoint para eliminar y recrear todas las tablas con esquema correcto
+app.post('/api/force-recreate-db', async (req, res) => {
+  await handleForceRecreateDB(req, res);
+});
+
+// Endpoint GET para eliminación y recreación (más fácil para acceso manual)
+app.get('/api/force-recreate-db', async (req, res) => {
+  await handleForceRecreateDB(req, res);
 });
 
 // Endpoint para verificar estado de tablas
@@ -271,6 +282,79 @@ async function handleReinitDB(req, res) {
     res.status(500).json({
       success: false,
       message: 'Error durante la reinicialización',
+      error: error.message
+    });
+  }
+}
+
+// Función para manejar la recreación forzada de tablas
+async function handleForceRecreateDB(req, res) {
+  try {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // En producción, requerir token especial
+    if (isProduction) {
+      const authToken = req.headers['x-reinit-token'] || 
+                        req.body?.token || 
+                        req.query?.token;
+      if (authToken !== process.env.REINIT_TOKEN) {
+        return res.status(401).json({
+          success: false,
+          message: 'Token de autorización requerido para recreación forzada en producción',
+          hint: 'Agrega ?token=TU_TOKEN a la URL o usa header x-reinit-token'
+        });
+      }
+    }
+    
+    console.log('🔥 Iniciando recreación forzada de BD (eliminar y recrear)...');
+    
+    const { spawn } = require('child_process');
+    
+    // Ejecutar recreación forzada
+    await new Promise((resolve, reject) => {
+      const recreateProcess = spawn('node', ['scripts/forceRecreateDB-railway.js'], {
+        cwd: __dirname,
+        stdio: 'pipe'
+      });
+      
+      let output = '';
+      let errorOutput = '';
+      
+      recreateProcess.stdout.on('data', (data) => {
+        const message = data.toString();
+        console.log(message);
+        output += message;
+      });
+      
+      recreateProcess.stderr.on('data', (data) => {
+        const message = data.toString();
+        console.error(message);
+        errorOutput += message;
+      });
+      
+      recreateProcess.on('close', (code) => {
+        if (code === 0) {
+          console.log('✅ Recreación forzada completada');
+          resolve();
+        } else {
+          console.error('❌ Error en recreación forzada');
+          reject(new Error(`Recreación forzada falló: ${errorOutput}`));
+        }
+      });
+    });
+    
+    res.json({
+      success: true,
+      message: 'Base de datos eliminada y recreada correctamente con esquema corregido',
+      timestamp: new Date().toISOString(),
+      note: 'Todas las tablas fueron eliminadas y recreadas con sql_codigo (no sql_query)'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en recreación forzada:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error durante la recreación forzada',
       error: error.message
     });
   }
