@@ -144,7 +144,8 @@ app.get('/api', (req, res) => {
       'emergency-recreate': '/api/emergency-recreate (GET) - Recreación de emergencia sin token',
       'diagnose-error': '/api/diagnose-error (GET) - Diagnosticar errores de consultas',
       'clean-table': '/api/clean-table (GET) - Limpiar campos innecesarios',
-      'test-post': '/api/test-post (POST) - Probar recepción de datos'
+      'test-post': '/api/test-post (POST) - Probar recepción de datos',
+      'recreate-original': '/api/recreate-original (GET) - Recrear con esquema original'
     },
     status: 'Railway deployment ready',
     database: 'MySQL on Railway'
@@ -279,6 +280,63 @@ app.get('/api/diagnose-error', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error durante el diagnóstico',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint para recrear BD con esquema original
+app.get('/api/recreate-original', async (req, res) => {
+  try {
+    console.log('🔧 Ejecutando recreación con esquema original...');
+    
+    const { spawn } = require('child_process');
+    
+    // Ejecutar recreación original
+    await new Promise((resolve, reject) => {
+      const recreateProcess = spawn('node', ['scripts/recreateOriginal-railway.js'], {
+        cwd: __dirname,
+        stdio: 'pipe'
+      });
+      
+      let output = '';
+      let errorOutput = '';
+      
+      recreateProcess.stdout.on('data', (data) => {
+        const message = data.toString();
+        console.log(message);
+        output += message;
+      });
+      
+      recreateProcess.stderr.on('data', (data) => {
+        const message = data.toString();
+        console.error(message);
+        errorOutput += message;
+      });
+      
+      recreateProcess.on('close', (code) => {
+        if (code === 0) {
+          console.log('✅ Recreación original completada');
+          resolve(output);
+        } else {
+          console.error('❌ Error en recreación original');
+          reject(new Error(`Recreación original falló: ${errorOutput}`));
+        }
+      });
+    });
+    
+    res.json({
+      success: true,
+      message: 'Base de datos recreada con esquema original exitosamente',
+      timestamp: new Date().toISOString(),
+      note: 'Esquema simple sin campos extra que causan conflictos'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error ejecutando recreación original:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error durante la recreación original',
       error: error.message
     });
   }
