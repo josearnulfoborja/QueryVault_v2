@@ -51,6 +51,49 @@ async function initializeDatabase() {
     const [timeRows] = await connection.execute('SELECT NOW() as timestamp');
     console.log('⏰ Timestamp:', timeRows[0].timestamp);
 
+    // Verificar si necesitamos recrear tablas (por inconsistencias de esquema)
+    console.log('\n🔍 Verificando esquema de tablas...');
+    let necesitaRecreacion = false;
+    
+    try {
+      // Verificar si la tabla consultas existe con sql_query (esquema incorrecto)
+      const [columns] = await connection.execute("SHOW COLUMNS FROM consultas LIKE 'sql_query'");
+      if (columns.length > 0) {
+        console.log('⚠️ Detectado esquema incorrecto (sql_query en lugar de sql_codigo)');
+        necesitaRecreacion = true;
+      }
+      
+      // También verificar si falta la columna sql_codigo
+      const [sqlCodigoCol] = await connection.execute("SHOW COLUMNS FROM consultas LIKE 'sql_codigo'");
+      if (sqlCodigoCol.length === 0) {
+        console.log('⚠️ Falta columna sql_codigo en tabla consultas');
+        necesitaRecreacion = true;
+      }
+    } catch (error) {
+      console.log('ℹ️ Tabla consultas no existe o error verificando esquema');
+      necesitaRecreacion = false; // Continuará con creación normal
+    }
+    
+    // Si se detectan inconsistencias, eliminar y recrear tablas
+    if (necesitaRecreacion) {
+      console.log('\n🗑️ ELIMINANDO TABLAS CON ESQUEMA INCORRECTO...');
+      console.log('⚠️ Esto eliminará todos los datos existentes');
+      
+      // Eliminar en orden correcto (por claves foráneas)
+      const tablasAEliminar = ['consulta_etiqueta', 'versiones_consulta', 'consultas', 'etiquetas'];
+      
+      for (const tabla of tablasAEliminar) {
+        try {
+          await connection.execute(`DROP TABLE IF EXISTS ${tabla}`);
+          console.log(`✅ Tabla ${tabla} eliminada`);
+        } catch (error) {
+          console.log(`⚠️ Error eliminando ${tabla}:`, error.message);
+        }
+      }
+      
+      console.log('✅ Tablas con esquema incorrecto eliminadas');
+    }
+
     console.log('\n🔄 Creando tabla consultas...');
     
     // Crear tabla consultas
