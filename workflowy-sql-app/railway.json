@@ -5,7 +5,7 @@
     "buildCommand": "npm install && cd backend && npm install"
   },
   "deploy": {
-    "startCommand": "NODE_ENV=production node server-railway.js",
+    "startCommand": "node railway-diagnostic.js",
     "healthcheckPath": "/api/health",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
