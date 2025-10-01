@@ -147,7 +147,8 @@ app.get('/api', (req, res) => {
       'test-post': '/api/test-post (POST) - Probar recepción de datos',
       'recreate-original': '/api/recreate-original (GET) - Recrear con esquema original',
       'test-insert': '/api/test-insert (GET) - Probar inserción directa',
-      'test-full-flow': '/api/test-full-flow (GET) - Probar flujo completo como frontend'
+      'test-full-flow': '/api/test-full-flow (GET) - Probar flujo completo como frontend',
+      'test-form-data': '/api/test-form-data (POST) - Probar datos exactos del formulario'
     },
     status: 'Railway deployment ready',
     database: 'MySQL on Railway'
@@ -283,6 +284,60 @@ app.get('/api/diagnose-error', async (req, res) => {
       success: false,
       message: 'Error durante el diagnóstico',
       error: error.message
+    });
+  }
+});
+
+// Endpoint para probar datos exactos del formulario
+app.post('/api/test-form-data', async (req, res) => {
+  try {
+    console.log('📝 TEST FORM DATA - Datos recibidos del formulario:');
+    console.log('   Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('   Body completo:', JSON.stringify(req.body, null, 2));
+    
+    const { titulo, descripcion, sql_codigo, autor, favorito, etiquetas } = req.body;
+    
+    console.log('📝 TEST FORM DATA - Campos individuales:');
+    console.log('   titulo:', `"${titulo}" (tipo: ${typeof titulo})`);
+    console.log('   descripcion:', `"${descripcion}" (tipo: ${typeof descripcion})`);
+    console.log('   sql_codigo:', `"${sql_codigo?.substring(0, 30)}..." (tipo: ${typeof sql_codigo})`);
+    console.log('   autor:', `"${autor}" (tipo: ${typeof autor})`);
+    console.log('   favorito:', `${favorito} (tipo: ${typeof favorito})`);
+    console.log('   etiquetas:', etiquetas, `(tipo: ${typeof etiquetas}, array: ${Array.isArray(etiquetas)})`);
+    
+    // Validar datos como hace la ruta real
+    if (!titulo || !sql_codigo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validación falló: Título y código SQL son requeridos',
+        receivedData: req.body
+      });
+    }
+    
+    console.log('📝 TEST FORM DATA - Validación pasada, probando modelo...');
+    
+    const ConsultaModel = require('./models/ConsultaModel');
+    const resultado = await ConsultaModel.create(req.body);
+    
+    console.log('📝 TEST FORM DATA - Resultado del modelo:', resultado);
+    
+    res.json({
+      success: true,
+      message: 'Datos del formulario procesados correctamente',
+      consultaCreada: resultado,
+      datosOriginales: req.body,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ ERROR en test-form-data:', error.message);
+    console.error('❌ Stack:', error.stack);
+    res.status(500).json({
+      success: false,
+      message: 'Error procesando datos del formulario',
+      error: error.message,
+      stack: error.stack,
+      receivedData: req.body
     });
   }
 });

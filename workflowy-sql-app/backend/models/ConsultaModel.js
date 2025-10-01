@@ -80,8 +80,9 @@ class ConsultaModel {
       console.log('   descripcion:', descripcion);
       console.log('   sql_codigo:', sql_codigo?.substring(0, 50) + '...');
       console.log('   autor:', autor);
-      console.log('   favorito:', favorito);
+      console.log('   favorito:', favorito, `(tipo: ${typeof favorito})`);
       console.log('   padre_id:', padre_id);
+      console.log('   etiquetas:', etiquetas, `(tipo: ${typeof etiquetas}, array: ${Array.isArray(etiquetas)}, length: ${etiquetas?.length})`);
       
       // Insertar consulta
       console.log('🔧 ConsultaModel.create - Ejecutando INSERT...');
@@ -94,19 +95,28 @@ class ConsultaModel {
       console.log('🔧 ConsultaModel.create - INSERT exitoso, ID:', consultaId);
       
       // Guardar primera versión
+      console.log('🔧 ConsultaModel.create - Guardando versión...');
       await connection.execute(
         'INSERT INTO versiones_consulta (consulta_id, sql_codigo) VALUES (?, ?)',
         [consultaId, sql_codigo]
       );
+      console.log('🔧 ConsultaModel.create - Versión guardada');
       
       // Procesar etiquetas si existen
-      if (etiquetas.length > 0) {
-        for (const etiqueta of etiquetas) {
+      console.log('🔧 ConsultaModel.create - Procesando etiquetas...');
+      if (etiquetas && etiquetas.length > 0) {
+        console.log(`🔧 ConsultaModel.create - Procesando ${etiquetas.length} etiquetas:`, etiquetas);
+        
+        for (let i = 0; i < etiquetas.length; i++) {
+          const etiqueta = etiquetas[i];
+          console.log(`🔧 ConsultaModel.create - Procesando etiqueta ${i + 1}: "${etiqueta}"`);
+          
           // Insertar etiqueta si no existe
           await connection.execute(
             'INSERT IGNORE INTO etiquetas (nombre) VALUES (?)',
             [etiqueta.trim()]
           );
+          console.log(`🔧 ConsultaModel.create - Etiqueta "${etiqueta}" insertada/verificada`);
           
           // Obtener ID de la etiqueta
           const [etiquetaRows] = await connection.execute(
@@ -114,14 +124,22 @@ class ConsultaModel {
             [etiqueta.trim()]
           );
           
+          console.log(`🔧 ConsultaModel.create - ID de etiqueta "${etiqueta}":`, etiquetaRows);
+          
           if (etiquetaRows.length > 0) {
             // Relacionar consulta con etiqueta
             await connection.execute(
               'INSERT INTO consulta_etiqueta (consulta_id, etiqueta_id) VALUES (?, ?)',
               [consultaId, etiquetaRows[0].id]
             );
+            console.log(`🔧 ConsultaModel.create - Relación creada: consulta ${consultaId} <-> etiqueta ${etiquetaRows[0].id}`);
+          } else {
+            console.log(`🔧 ConsultaModel.create - ⚠️ No se encontró ID para etiqueta "${etiqueta}"`);
           }
         }
+        console.log('🔧 ConsultaModel.create - Todas las etiquetas procesadas');
+      } else {
+        console.log('🔧 ConsultaModel.create - No hay etiquetas para procesar');
       }
       
       await connection.commit();
