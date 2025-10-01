@@ -1,5 +1,7 @@
 // Servidor principal simplificado para Railway
-console.log('🚀 Iniciando QueryVault - Railway Edition...');
+console.log('🚀 ==========================================');
+console.log('🚀 INICIANDO QUERYVAULT - RAILWAY EDITION');
+console.log('🚀 ==========================================');
 
 const express = require('express');
 const cors = require('cors');
