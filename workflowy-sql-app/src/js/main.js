@@ -112,7 +112,25 @@ async function checkServerHealth() {
         clearTimeout(timeoutId);
         
         if (!response.ok) {
-            throw new Error(`Servidor respondió con estado ${response.status}: ${response.statusText}`);
+            // Obtener el cuerpo de la respuesta para más información del error
+            let errorBody = '';
+            try {
+                const text = await response.text();
+                errorBody = text ? `: ${text.substring(0, 200)}` : '';
+            } catch (e) {
+                // Si no se puede leer el cuerpo, continuar sin él
+            }
+            
+            let errorMsg = `Servidor respondió con estado ${response.status}: ${response.statusText}${errorBody}`;
+            
+            // Mensajes específicos para errores comunes
+            if (response.status === 404) {
+                errorMsg += '\n\n🔧 Posibles soluciones:\n1. Verifica que NODE_ENV=production esté configurado en Railway\n2. Asegúrate de que el servicio MySQL esté agregado\n3. Revisa los logs de Railway para más detalles';
+            } else if (response.status === 500) {
+                errorMsg += '\n\n🔧 Error interno del servidor. Revisa los logs de Railway para más información.';
+            }
+            
+            throw new Error(errorMsg);
         }
         
         const data = await response.json();
