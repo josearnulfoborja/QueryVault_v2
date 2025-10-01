@@ -2,9 +2,9 @@
   "name": "queryvault-v2",
   "version": "1.0.0",
   "description": "QueryVault - SQL Query Management Application",
-  "main": "workflowy-sql-app/backend/server.js",
+  "main": "workflowy-sql-app/server-railway.js",
   "scripts": {
-    "start": "node workflowy-sql-app/backend/server.js",
+    "start": "node workflowy-sql-app/server-railway.js",
     "build": "echo Build completed",
     "postinstall": "cd workflowy-sql-app && npm install",
     "init-db-railway": "cd workflowy-sql-app && npm run init-db",
