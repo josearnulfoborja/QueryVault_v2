@@ -37,9 +37,9 @@ try {
         process.chdir(backendPath);
         console.log('📁 Directorio cambiado a:', process.cwd());
         
-        // Cargar el servidor híbrido
+        // Cargar el servidor híbrido usando la ruta absoluta
         console.log('🎯 Cargando servidor híbrido...');
-        require('./server-hybrid.js');
+        require(serverHybridPath);
         console.log('✅ Servidor híbrido cargado exitosamente');
         
     } else {

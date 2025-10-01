@@ -67,7 +67,58 @@ async function testConnection() {
   }
 }
 
+// Función para obtener el pool de conexiones
+function getPool() {
+  return pool;
+}
+
+// Función para inicializar la base de datos
+async function initializeDatabase() {
+  try {
+    console.log('🔄 Inicializando base de datos...');
+    
+    // Verificar que las tablas existan
+    const connection = await pool.getConnection();
+    
+    // Verificar si la tabla consultas existe
+    const [rows] = await connection.execute(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = ? AND table_name = 'consultas'
+    `, [dbConfig.database]);
+    
+    if (rows[0].count === 0) {
+      console.log('📋 Creando tabla consultas...');
+      await connection.execute(`
+        CREATE TABLE consultas (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          titulo VARCHAR(255) NOT NULL,
+          descripcion TEXT,
+          autor VARCHAR(100),
+          sql_codigo TEXT NOT NULL,
+          favorito BOOLEAN DEFAULT FALSE,
+          etiquetas TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `);
+      console.log('✅ Tabla consultas creada exitosamente');
+    } else {
+      console.log('✅ Tabla consultas ya existe');
+    }
+    
+    connection.release();
+    console.log('✅ Base de datos inicializada correctamente');
+    return true;
+  } catch (error) {
+    console.error('❌ Error inicializando base de datos:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   pool,
-  testConnection
+  testConnection,
+  getPool,
+  initializeDatabase
 };
