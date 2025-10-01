@@ -2,12 +2,13 @@
   "name": "queryvault",
   "version": "1.0.0",
   "description": "Gestor de Consultas SQL - Una aplicación web para organizar y gestionar consultas SQL",
-  "main": "backend/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node backend/server.js",
-    "dev": "nodemon backend/server.js",
-    "build": "echo 'Build completed successfully'",
-    "init-db": "node backend/scripts/initDatabase.js"
+    "start": "NODE_ENV=production node server.js",
+    "dev": "node backend/server-hybrid.js",
+    "build": "npm install && cd backend && npm install",
+    "init-db": "node backend/scripts/initDatabase.js",
+    "railway:start": "NODE_ENV=production node server.js"
   },
   "keywords": [
     "sql",

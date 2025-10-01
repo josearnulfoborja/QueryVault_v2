@@ -28,8 +28,27 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Servir archivos estáticos
-const staticPath = path.join(__dirname, '../src');
+let staticPath = path.join(__dirname, '../src');
+
+// Verificar que existe el directorio src
+if (!fs.existsSync(staticPath)) {
+    console.log(`❌ Directorio src no encontrado en: ${staticPath}`);
+    // Intentar desde la raíz del proyecto
+    staticPath = path.join(process.cwd(), 'src');
+    if (!fs.existsSync(staticPath)) {
+        console.log(`❌ Directorio src tampoco encontrado en: ${staticPath}`);
+        // Crear un directorio temporal si no existe
+        staticPath = __dirname;
+    }
+}
+
 console.log(`📁 Sirviendo archivos estáticos desde: ${staticPath}`);
+if (fs.existsSync(staticPath)) {
+    console.log(`📂 Archivos disponibles:`, fs.readdirSync(staticPath));
+} else {
+    console.log('❌ Directorio estático no existe');
+}
+
 app.use(express.static(staticPath));
 
 // ==================== FUNCIONES DE PERSISTENCIA ====================
@@ -508,7 +527,7 @@ async function initializeServer() {
     }
     
     // Iniciar servidor
-    const server = app.listen(PORT, '127.0.0.1', () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log('\n🚀 ¡QUERYVAULT SERVER INICIADO EXITOSAMENTE!');
       console.log('==============================================');
       console.log(`📍 Puerto: ${PORT}`);
@@ -517,6 +536,8 @@ async function initializeServer() {
       console.log(`✅ Health Check: http://localhost:${PORT}/api/health`);
       console.log(`📋 Consultas API: http://localhost:${PORT}/api/consultas`);
       console.log(`💾 Almacenamiento: ${USE_MYSQL ? 'MySQL' : 'JSON File'}`);
+      console.log(`🌍 Entorno: ${process.env.NODE_ENV}`);
+      console.log(`🔌 Escuchando en: 0.0.0.0:${PORT}`);
       console.log('==============================================');
       console.log('🎯 ¡Servidor listo para recibir requests!');
       console.log('');

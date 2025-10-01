@@ -3,12 +3,12 @@ nixPkgs = ["...", "nodejs-18_x"]
 
 [phases.build]
 cmds = [
-  "cd backend",
-  "npm install"
+  "npm install",
+  "cd backend && npm install"
 ]
 
 [phases.start]
-cmd = "cd backend && NODE_ENV=production node server-hybrid.js"
+cmd = "NODE_ENV=production node server.js"
 
 [variables]
 NODE_ENV = "production"
