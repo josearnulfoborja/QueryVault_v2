@@ -151,8 +151,13 @@ async function loadQueries(filtro = '') {
 }
 
 async function saveQuery(queryData) {
+    console.log('💾 saveQuery() - Datos recibidos:', queryData);
+    console.log('💾 Favorito:', queryData.favorito, 'Type:', typeof queryData.favorito);
+    console.log('💾 Etiquetas:', queryData.etiquetas, 'Type:', typeof queryData.etiquetas, 'Array:', Array.isArray(queryData.etiquetas));
+    
     try {
         if (isEditing && currentQuery) {
+            console.log('✏️ Actualizando consulta existente ID:', currentQuery.id);
             const response = await apiRequest(`/consultas/${currentQuery.id}`, {
                 method: 'PUT',
                 body: JSON.stringify(queryData)
@@ -160,14 +165,18 @@ async function saveQuery(queryData) {
             showToast('Consulta actualizada exitosamente', 'success');
             return response.data;
         } else {
+            console.log('🆕 Creando nueva consulta');
+            console.log('📤 Enviando datos a /consultas:', JSON.stringify(queryData, null, 2));
             const response = await apiRequest('/consultas', {
                 method: 'POST',
                 body: JSON.stringify(queryData)
             });
+            console.log('✅ Respuesta del servidor:', response);
             showToast('Consulta creada exitosamente', 'success');
             return response.data;
         }
     } catch (error) {
+        console.error('❌ Error en saveQuery:', error);
         showToast('Error al guardar la consulta: ' + error.message, 'error');
         throw error;
     }
@@ -457,7 +466,7 @@ function getFormData() {
         descripcion: formData.get('descripcion').trim(),
         autor: formData.get('autor').trim(),
         sql_codigo: formData.get('sql_codigo').trim(),
-        favorito: formData.has('favorito')
+        favorito: document.getElementById('query-favorite').checked
     };
     
     // Process tags
@@ -467,6 +476,10 @@ function getFormData() {
     } else {
         data.etiquetas = [];
     }
+    
+    console.log('📝 getFormData() - Datos extraídos del formulario:', data);
+    console.log('📝 Favorito value:', data.favorito, 'Type:', typeof data.favorito);
+    console.log('📝 Etiquetas:', data.etiquetas, 'Type:', typeof data.etiquetas, 'Array:', Array.isArray(data.etiquetas));
     
     return data;
 }
