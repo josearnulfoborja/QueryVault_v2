@@ -1,7 +1,25 @@
-// API Configuration - Conectar al servidor backend en puerto 3000
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:3000/api' 
-    : `${window.location.origin}/api`;
+// API Configuration - Detectar automáticamente el entorno
+function getApiBaseUrl() {
+    const hostname = window.location.hostname;
+    const port = window.location.port;
+    const protocol = window.location.protocol;
+    
+    console.log('🌐 Detectando entorno:', { hostname, port, protocol });
+    
+    // Desarrollo local
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        const apiUrl = `${protocol}//${hostname}:3000/api`;
+        console.log('🔧 Modo desarrollo:', apiUrl);
+        return apiUrl;
+    }
+    
+    // Producción (Railway, Vercel, etc.)
+    const apiUrl = `${window.location.origin}/api`;
+    console.log('🚀 Modo producción:', apiUrl);
+    return apiUrl;
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Application State
 let queries = [];
@@ -32,9 +50,9 @@ async function initializeApp() {
     try {
         showLoading(true);
         
-        // Verificar conectividad del servidor primero
+        // Verificar conectividad del servidor con reintentos
         console.log('🔌 Verificando conectividad con el servidor...', API_BASE_URL);
-        await checkServerHealth();
+        await checkServerHealthWithRetry();
         console.log('✅ Servidor conectado correctamente');
         
         await loadQueries();
@@ -42,24 +60,81 @@ async function initializeApp() {
         console.log('🚀 Aplicación inicializada correctamente');
     } catch (error) {
         showLoading(false);
-        showToast('Error al cargar la aplicación: ' + error.message, 'error');
         console.error('❌ Error initializing app:', error);
+        
+        // Mostrar mensaje de error más específico
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const instruction = isLocal 
+            ? 'Inicia el servidor con: cd backend && npm run dev'
+            : 'Verifica que la aplicación esté desplegada correctamente';
+            
+        showToast(`Error al cargar la aplicación: ${error.message}. ${instruction}`, 'error');
+    }
+}
+
+// Función para verificar la salud del servidor con reintentos
+async function checkServerHealthWithRetry(maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`🔄 Intento ${attempt}/${maxRetries} de conexión al servidor`);
+            return await checkServerHealth();
+        } catch (error) {
+            console.warn(`⚠️ Intento ${attempt} falló:`, error.message);
+            
+            if (attempt === maxRetries) {
+                throw error; // Re-lanzar el error en el último intento
+            }
+            
+            // Esperar antes del siguiente intento (backoff exponencial)
+            const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+            console.log(`⏳ Esperando ${delay}ms antes del siguiente intento...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
     }
 }
 
 // Función para verificar la salud del servidor
 async function checkServerHealth() {
+    console.log('🔌 Verificando servidor en:', API_BASE_URL);
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/health`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+        
+        const response = await fetch(`${API_BASE_URL}/health`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (!response.ok) {
-            throw new Error(`Servidor respondió con estado ${response.status}`);
+            throw new Error(`Servidor respondió con estado ${response.status}: ${response.statusText}`);
         }
+        
         const data = await response.json();
-        console.log('Server health check:', data);
+        console.log('✅ Health check exitoso:', data);
         return data;
     } catch (error) {
-        console.error('Health check failed:', error);
-        throw new Error('No se puede conectar al servidor. Verifica que el servidor backend esté corriendo en http://localhost:3000');
+        console.error('❌ Health check falló:', error);
+        
+        let errorMessage;
+        if (error.name === 'AbortError') {
+            errorMessage = 'Timeout: El servidor tardó demasiado en responder';
+        } else if (error.message.includes('fetch')) {
+            errorMessage = 'Error de conexión: No se puede alcanzar el servidor';
+        } else {
+            errorMessage = error.message;
+        }
+        
+        const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3000' 
+            : window.location.origin;
+            
+        throw new Error(`${errorMessage}. Verifica que el servidor esté funcionando en ${serverUrl}`);
     }
 }
 
