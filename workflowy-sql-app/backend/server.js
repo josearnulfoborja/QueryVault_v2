@@ -145,7 +145,9 @@ app.get('/api', (req, res) => {
       'diagnose-error': '/api/diagnose-error (GET) - Diagnosticar errores de consultas',
       'clean-table': '/api/clean-table (GET) - Limpiar campos innecesarios',
       'test-post': '/api/test-post (POST) - Probar recepción de datos',
-      'recreate-original': '/api/recreate-original (GET) - Recrear con esquema original'
+      'recreate-original': '/api/recreate-original (GET) - Recrear con esquema original',
+      'test-insert': '/api/test-insert (GET) - Probar inserción directa',
+      'test-full-flow': '/api/test-full-flow (GET) - Probar flujo completo como frontend'
     },
     status: 'Railway deployment ready',
     database: 'MySQL on Railway'
@@ -281,6 +283,109 @@ app.get('/api/diagnose-error', async (req, res) => {
       success: false,
       message: 'Error durante el diagnóstico',
       error: error.message
+    });
+  }
+});
+
+// Endpoint para probar flujo completo como frontend
+app.get('/api/test-full-flow', async (req, res) => {
+  try {
+    console.log('🔄 TEST FULL FLOW - Simulando flujo completo del frontend...');
+    
+    const ConsultaModel = require('./models/ConsultaModel');
+    
+    // Datos que simula el frontend
+    const consultaData = {
+      titulo: 'Test Flujo Completo ' + Date.now(),
+      descripcion: 'Esta consulta simula el flujo completo del frontend',
+      sql_codigo: 'SELECT COUNT(*) as total FROM usuarios WHERE activo = 1;',
+      autor: 'Usuario Test',
+      favorito: false,
+      etiquetas: ['test', 'simulacion']
+    };
+    
+    console.log('🔄 TEST FULL FLOW - Datos simulados:', consultaData);
+    
+    // Validación como en la ruta
+    if (!consultaData.titulo || !consultaData.sql_codigo) {
+      throw new Error('Validación falló: título o sql_codigo vacío');
+    }
+    
+    console.log('🔄 TEST FULL FLOW - Validación pasada, llamando ConsultaModel.create...');
+    
+    // Usar el modelo exactamente como la ruta real
+    const nuevaConsulta = await ConsultaModel.create(consultaData);
+    
+    console.log('🔄 TEST FULL FLOW - Consulta creada exitosamente:', nuevaConsulta);
+    
+    res.json({
+      success: true,
+      message: 'Flujo completo exitoso - simulación del frontend',
+      data: nuevaConsulta,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ ERROR en test-full-flow:', error.message);
+    console.error('❌ Stack:', error.stack);
+    res.status(500).json({
+      success: false,
+      message: 'Error en flujo completo',
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+// Endpoint para probar inserción directa simple
+app.get('/api/test-insert', async (req, res) => {
+  try {
+    console.log('🧪 TEST INSERT - Probando inserción directa...');
+    
+    const { pool } = require('./config/database-url-final');
+    
+    // Datos de prueba simples
+    const testData = {
+      titulo: 'Test Consulta ' + Date.now(),
+      descripcion: 'Esta es una consulta de prueba',
+      sql_codigo: 'SELECT 1 as test;',
+      autor: 'Test Usuario'
+    };
+    
+    console.log('🧪 TEST INSERT - Datos a insertar:', testData);
+    
+    // Intentar inserción directa
+    const [result] = await pool.execute(
+      'INSERT INTO consultas (titulo, descripcion, sql_codigo, autor) VALUES (?, ?, ?, ?)',
+      [testData.titulo, testData.descripcion, testData.sql_codigo, testData.autor]
+    );
+    
+    console.log('🧪 TEST INSERT - Resultado:', result);
+    
+    // Verificar que se insertó
+    const [consulta] = await pool.execute(
+      'SELECT * FROM consultas WHERE id = ?',
+      [result.insertId]
+    );
+    
+    console.log('🧪 TEST INSERT - Consulta insertada:', consulta[0]);
+    
+    res.json({
+      success: true,
+      message: 'Inserción directa exitosa',
+      insertId: result.insertId,
+      consultaCreada: consulta[0],
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ ERROR en test-insert:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en inserción directa',
+      error: error.message,
+      code: error.code,
+      sqlState: error.sqlState
     });
   }
 });
