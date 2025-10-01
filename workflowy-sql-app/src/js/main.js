@@ -50,10 +50,14 @@ async function initializeApp() {
     try {
         showLoading(true);
         
-        // Verificar conectividad del servidor con reintentos
+        // Verificar conectividad del servidor con reintentos (no bloquear si falla)
         console.log('🔌 Verificando conectividad con el servidor...', API_BASE_URL);
-        await checkServerHealthWithRetry();
-        console.log('✅ Servidor conectado correctamente');
+        try {
+            await checkServerHealthWithRetry();
+            console.log('✅ Servidor conectado correctamente');
+        } catch (healthError) {
+            console.warn('⚠️ Health check falló, pero continuando con la carga de datos:', healthError.message);
+        }
         
         await loadQueries();
         showLoading(false);

@@ -82,15 +82,16 @@ function saveConsultas() {
     }
 }
 
-// API Endpoints
+// Health check - PRIMERO
 app.get('/api/health', (req, res) => {
-    console.log(`📝 Health check - ${new Date().toLocaleTimeString()}`);
-    res.json({
+    console.log(`📝 Health check - ${new Date().toLocaleTimeString()} - Origin: ${req.headers.origin || 'No origin'}`);
+    res.status(200).json({
         status: 'OK',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV,
         storage: 'JSON',
-        version: '2.0-railway'
+        version: '2.0-railway',
+        message: 'QueryVault Railway Edition funcionando correctamente'
     });
 });
 
