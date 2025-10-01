@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico QueryVault - Railway</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .test-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .code {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico QueryVault - Railway</h1>
+        
+        <div class="test-section">
+            <div class="test-title">📍 Información del Entorno</div>
+            <div id="env-info" class="result info">
+                <strong>URL:</strong> <span id="current-url"></span><br>
+                <strong>Hostname:</strong> <span id="hostname"></span><br>
+                <strong>Protocol:</strong> <span id="protocol"></span><br>
+                <strong>Port:</strong> <span id="port"></span><br>
+                <strong>API URL:</strong> <span id="api-url"></span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🔌 Test de Conectividad</div>
+            <button onclick="testHealth()">Probar Health Check</button>
+            <div id="health-result" class="result loading">Esperando test...</div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">📊 Test de API</div>
+            <button onclick="testAPI()">Probar API Consultas</button>
+            <div id="api-result" class="result loading">Esperando test...</div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🎯 Variables de Entorno (Railway)</div>
+            <div class="result info">
+                Para que funcione en Railway, asegúrate de tener configurado:
+                <div class="code">NODE_ENV=production</div>
+                Y que el servicio MySQL esté agregado en Railway.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">📋 Logs del Sistema</div>
+            <div id="logs" class="code" style="max-height: 200px; overflow-y: auto;">
+                Logs aparecerán aquí...
+            </div>
+            <button onclick="clearLogs()">Limpiar Logs</button>
+        </div>
+    </div>
+
+    <script>
+        // Función para logging
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('logs');
+            const logMessage = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logElement.textContent += logMessage;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(logMessage);
+        }
+
+        // Función para detectar API URL
+        function getApiBaseUrl() {
+            const hostname = window.location.hostname;
+            const port = window.location.port;
+            const protocol = window.location.protocol;
+            
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return `${protocol}//${hostname}:3000/api`;
+            }
+            return `${window.location.origin}/api`;
+        }
+
+        // Inicializar información del entorno
+        function initEnvInfo() {
+            document.getElementById('current-url').textContent = window.location.href;
+            document.getElementById('hostname').textContent = window.location.hostname;
+            document.getElementById('protocol').textContent = window.location.protocol;
+            document.getElementById('port').textContent = window.location.port || '(default)';
+            
+            const apiUrl = getApiBaseUrl();
+            document.getElementById('api-url').textContent = apiUrl;
+            
+            log(`Entorno detectado: ${window.location.hostname === 'localhost' ? 'DESARROLLO' : 'PRODUCCIÓN'}`);
+            log(`API URL: ${apiUrl}`);
+        }
+
+        // Test de Health Check
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            const apiUrl = getApiBaseUrl();
+            
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = 'Probando health check...';
+            log('Iniciando test de health check...');
+            
+            try {
+                const response = await fetch(`${apiUrl}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        ✅ Health Check OK<br>
+                        <strong>Status:</strong> ${data.status}<br>
+                        <strong>Storage:</strong> ${data.storage}<br>
+                        ${data.database ? `<strong>Database:</strong> ${data.database}<br>` : ''}
+                        <div class="code">${JSON.stringify(data, null, 2)}</div>
+                    `;
+                    log('Health check exitoso', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    ❌ Error en Health Check<br>
+                    <strong>Error:</strong> ${error.message}<br>
+                    <strong>URL:</strong> ${apiUrl}/health
+                `;
+                log(`Health check falló: ${error.message}`, 'error');
+            }
+        }
+
+        // Test de API
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            const apiUrl = getApiBaseUrl();
+            
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = 'Probando API de consultas...';
+            log('Iniciando test de API...');
+            
+            try {
+                const response = await fetch(`${apiUrl}/consultas`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        ✅ API OK<br>
+                        <strong>Consultas encontradas:</strong> ${data.length}<br>
+                        <strong>URL:</strong> ${apiUrl}/consultas<br>
+                        <div class="code">${JSON.stringify(data, null, 2).substring(0, 500)}...</div>
+                    `;
+                    log(`API test exitoso: ${data.length} consultas encontradas`, 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    ❌ Error en API<br>
+                    <strong>Error:</strong> ${error.message}<br>
+                    <strong>URL:</strong> ${apiUrl}/consultas
+                `;
+                log(`API test falló: ${error.message}`, 'error');
+            }
+        }
+
+        // Limpiar logs
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+            log('Logs limpiados');
+        }
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', () => {
+            initEnvInfo();
+            log('Página de diagnóstico cargada');
+        });
+
+        // Auto-ejecutar tests después de 2 segundos
+        setTimeout(() => {
+            testHealth();
+            setTimeout(testAPI, 2000);
+        }, 2000);
+    </script>
+</body>
+</html>
