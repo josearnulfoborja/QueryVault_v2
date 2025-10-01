@@ -1,33 +1,34 @@
-# 🚀 Guía de Despliegue en Railway.app
+# 🚀 Guía de Despliegue en Railway - QueryVault con Sistema Híbrido
 
-## Paso 1: Preparar el Proyecto
+## 🎯 **CONFIGURACIÓN CRÍTICA PARA PRODUCCIÓN**
 
-### 1.1 Asegúrate de que tienes estos archivos:
-- ✅ `railway.json` - Configuración de Railway
-- ✅ `Procfile` - Comando de inicio
-- ✅ `.env.example` - Variables de entorno de ejemplo
-- ✅ `database_setup.sql` - Script de base de datos
+### ⚠️ **Variable ESENCIAL**
+```bash
+NODE_ENV=production
+```
+**Esta variable es OBLIGATORIA para que use MySQL en lugar de JSON**
 
-## Paso 2: Configurar Railway
+## 📋 **Pasos para Configurar Railway**
 
-### 2.1 Crear cuenta y nuevo proyecto
+### 1. **Crear Proyecto en Railway**
 1. Ve a [railway.app](https://railway.app)
-2. Inicia sesión con GitHub
-3. Clic en "New Project"
-4. Selecciona "Deploy from GitHub repo"
-5. Conecta tu repositorio `QueryVault_v2`
+2. Haz clic en "Start a New Project"
+3. Selecciona "Deploy from GitHub repo"
+4. Conecta tu repositorio: `josearnulfoborja/QueryVault_v2`
 
-### 2.2 Agregar Base de Datos MySQL
-1. En tu proyecto de Railway, clic en "New"
+### 2. **Agregar Servicio MySQL**
+1. En tu proyecto Railway, haz clic en "Add Service"
 2. Selecciona "Database" → "MySQL"
-3. Railway creará automáticamente:
-   - Una instancia de MySQL
-   - Variables de entorno automáticas
+3. Railway automáticamente creará las variables de entorno necesarias
 
-## Paso 3: Configurar Variables de Entorno
+### 3. **Configurar Variables de Entorno CRÍTICAS**
 
-Railway generará automáticamente estas variables para MySQL:
-- `MYSQLHOST` - Host de la base de datos
+#### ⚠️ **REQUERIDAS (configurar manualmente):**
+```bash
+NODE_ENV=production    # CRÍTICO: Activa modo MySQL
+```
+
+#### ✅ **Automáticas (Railway las configura):**
 - `MYSQLUSER` - Usuario de la base de datos  
 - `MYSQLPASSWORD` - Contraseña de la base de datos
 - `MYSQLDATABASE` - Nombre de la base de datos

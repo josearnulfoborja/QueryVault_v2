@@ -1,0 +1,18 @@
+# Variables de Entorno para Railway (Producción)
+
+# REQUERIDO: Configurar modo producción
+NODE_ENV=production
+
+# Puerto (Railway lo asigna automáticamente, pero puedes especificar)
+PORT=3000
+
+# Variables de MySQL (Railway las genera automáticamente cuando agregas MySQL service)
+# Solo necesitas configurar estas si usas MySQL externo:
+DB_HOST=containers-us-west-xxx.railway.app
+DB_USER=root
+DB_PASSWORD=xxxxxxxxxxxxxxx
+DB_NAME=railway
+DB_PORT=3306
+
+# Opcional: URL del cliente para CORS
+CLIENT_URL=https://tu-app.railway.app
