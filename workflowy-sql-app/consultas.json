@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "nombre": "Usuarios activos",
+    "sql": "SELECT * FROM usuarios WHERE activo = 1",
+    "descripcion": "Consulta para obtener usuarios activos",
+    "etiquetas": [
+      "usuarios",
+      "activos"
+    ],
+    "favorito": false,
+    "fechaCreacion": "2025-10-01T07:45:53.956Z"
+  },
+  {
+    "id": 2,
+    "nombre": "Ventas por mes",
+    "sql": "SELECT MONTH(fecha) as mes, SUM(total) as total FROM ventas GROUP BY MONTH(fecha)",
+    "descripcion": "Ventas agrupadas por mes",
+    "etiquetas": [
+      "ventas",
+      "reportes"
+    ],
+    "favorito": true,
+    "fechaCreacion": "2025-10-01T07:45:53.957Z"
+  },
+  {
+    "id": 3,
+    "nombre": "Productos más vendidos",
+    "sql": "SELECT producto, COUNT(*) as ventas FROM pedidos GROUP BY producto ORDER BY ventas DESC LIMIT 10",
+    "descripcion": "Top 10 productos más vendidos",
+    "etiquetas": [
+      "productos",
+      "ventas"
+    ],
+    "favorito": false,
+    "fechaCreacion": "2025-10-01T07:45:53.957Z"
+  }
+]
