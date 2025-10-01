@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico QueryVault</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffe6e6; border: 1px solid #ff9999; }
+        .success { background: #e6ffe6; border: 1px solid #99ff99; }
+        pre { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Diagnóstico QueryVault</h1>
+    
+    <div id="status" class="debug">
+        <h3>Estado inicial</h3>
+        <p>Iniciando diagnóstico...</p>
+    </div>
+    
+    <div id="health" class="debug">
+        <h3>Health Check</h3>
+        <p>Verificando conexión...</p>
+    </div>
+    
+    <div id="data" class="debug">
+        <h3>Datos del servidor</h3>
+        <p>Cargando consultas...</p>
+    </div>
+    
+    <div id="frontend" class="debug">
+        <h3>Estado del frontend</h3>
+        <p>Verificando variables...</p>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+        
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const className = type === 'error' ? 'debug error' : 
+                             type === 'success' ? 'debug success' : 'debug';
+            element.className = className;
+            element.innerHTML = `<h3>${element.querySelector('h3').textContent}</h3><pre>${message}</pre>`;
+        }
+        
+        async function runDiagnostic() {
+            try {
+                // 1. Health check
+                log('health', '🔍 Probando health check...');
+                const healthResponse = await fetch(`${API_BASE_URL}/health`);
+                const healthData = await healthResponse.json();
+                log('health', `✅ Health check OK\n${JSON.stringify(healthData, null, 2)}`, 'success');
+                
+                // 2. Get data
+                log('data', '📡 Obteniendo consultas del servidor...');
+                const dataResponse = await fetch(`${API_BASE_URL}/consultas`);
+                const consultas = await dataResponse.json();
+                log('data', `📋 Consultas recibidas: ${consultas.length}\n${JSON.stringify(consultas, null, 2)}`, 'success');
+                
+                // 3. Frontend state
+                log('frontend', `📊 Estado del frontend:
+queries array: ${Array.isArray(consultas) ? 'Es array' : 'NO es array'}
+queries length: ${consultas.length}
+queries content: ${JSON.stringify(consultas, null, 2)}
+
+DOM Elements:
+- queriesList: ${document.getElementById('queries-list') ? 'Existe' : 'NO existe'}
+- emptyState: ${document.getElementById('empty-state') ? 'Existe' : 'NO existe'}
+- searchInput: ${document.getElementById('search-input') ? 'Existe' : 'NO existe'}`, 'success');
+                
+                log('status', '✅ Diagnóstico completado exitosamente', 'success');
+                
+            } catch (error) {
+                log('status', `❌ Error en diagnóstico: ${error.message}\n${error.stack}`, 'error');
+            }
+        }
+        
+        // Ejecutar diagnóstico al cargar
+        window.addEventListener('load', runDiagnostic);
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-// API Configuration - Detectar automáticamente el entorno
+// API Configuration - Conectar al servidor backend en puerto 3000
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
     ? 'http://localhost:3000/api' 
     : `${window.location.origin}/api`;
@@ -50,7 +50,7 @@ async function initializeApp() {
 // Función para verificar la salud del servidor
 async function checkServerHealth() {
     try {
-        const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`);
+        const response = await fetch(`${API_BASE_URL}/health`);
         if (!response.ok) {
             throw new Error(`Servidor respondió con estado ${response.status}`);
         }
@@ -142,7 +142,9 @@ async function loadQueries(filtro = '') {
     try {
         const params = filtro ? `?filtro=${encodeURIComponent(filtro)}` : '';
         const response = await apiRequest(`/consultas${params}`);
-        queries = response.data || [];
+        console.log('📥 Consultas recibidas del servidor:', response);
+        queries = Array.isArray(response) ? response : (response.data || []);
+        console.log('📋 Consultas cargadas en frontend:', queries.length);
         renderQueries();
     } catch (error) {
         showToast('Error al cargar las consultas', 'error');
@@ -163,7 +165,7 @@ async function saveQuery(queryData) {
                 body: JSON.stringify(queryData)
             });
             showToast('Consulta actualizada exitosamente', 'success');
-            return response.data;
+            return response;
         } else {
             console.log('🆕 Creando nueva consulta');
             console.log('📤 Enviando datos a /consultas:', JSON.stringify(queryData, null, 2));
@@ -173,7 +175,7 @@ async function saveQuery(queryData) {
             });
             console.log('✅ Respuesta del servidor:', response);
             showToast('Consulta creada exitosamente', 'success');
-            return response.data;
+            return response;
         }
     } catch (error) {
         console.error('❌ Error en saveQuery:', error);
@@ -196,9 +198,14 @@ async function deleteQuery(id) {
 
 // UI Functions
 function renderQueries() {
+    console.log('🎨 renderQueries() llamada');
+    console.log('📋 queries.length:', queries.length);
+    console.log('📋 queries:', queries);
+    
     const searchTerm = searchInput.value.trim();
     
     if (queries.length === 0) {
+        console.log('🚫 No hay consultas, mostrando estado vacío');
         queriesList.classList.add('hidden');
         emptyState.classList.remove('hidden');
         
@@ -228,6 +235,7 @@ function renderQueries() {
         return;
     }
     
+    console.log('✅ Hay consultas, procediendo a renderizar');
     queriesList.classList.remove('hidden');
     emptyState.classList.add('hidden');
     
@@ -243,6 +251,7 @@ function renderQueries() {
         `;
     }
     
+    console.log('🎨 Generando HTML para', queries.length, 'consultas');
     queriesList.innerHTML = searchInfoHtml + queries.map(query => `
         <div class="query-item" data-id="${query.id}">
             <div class="query-header">
@@ -276,10 +285,10 @@ function renderQueries() {
                 <pre><code class="language-sql">${highlightSearchTerm(escapeHtml(query.sql_codigo), searchTermLower)}</code></pre>
             </div>
             
-            ${query.etiquetas ? `
+            ${query.etiquetas && query.etiquetas.length > 0 ? `
                 <div class="query-tags">
-                    ${query.etiquetas.split(',').map(tag => 
-                        `<span class="tag">${highlightSearchTerm(escapeHtml(tag.trim()), searchTermLower)}</span>`
+                    ${(Array.isArray(query.etiquetas) ? query.etiquetas : []).map(tag => 
+                        `<span class="tag">${highlightSearchTerm(escapeHtml(String(tag).trim()), searchTermLower)}</span>`
                     ).join('')}
                 </div>
             ` : ''}
@@ -451,11 +460,18 @@ function resetForm() {
 }
 
 function fillForm(query) {
+    console.log('📝 Llenando formulario con:', query);
     document.getElementById('query-title').value = query.titulo || '';
     document.getElementById('query-description').value = query.descripcion || '';
     document.getElementById('query-author').value = query.autor || '';
     document.getElementById('query-sql').value = query.sql_codigo || '';
-    document.getElementById('query-tags').value = query.etiquetas || '';
+    
+    // Manejar etiquetas como array
+    const etiquetas = Array.isArray(query.etiquetas) 
+        ? query.etiquetas.join(', ') 
+        : (query.etiquetas || '');
+    document.getElementById('query-tags').value = etiquetas;
+    
     document.getElementById('query-favorite').checked = query.favorito || false;
 }
 
@@ -582,8 +598,10 @@ function handleKeyboard(event) {
 window.editQuery = async function(id) {
     try {
         const response = await apiRequest(`/consultas/${id}`);
-        openEditQueryModal(response.data);
+        console.log('🔍 Consulta para editar:', response);
+        openEditQueryModal(response);
     } catch (error) {
+        console.error('❌ Error cargando consulta para editar:', error);
         showToast('Error al cargar la consulta', 'error');
     }
 };

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple QueryVault</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📚 QueryVault - Test Simple</h1>
+        </header>
+
+        <div id="debug-info" style="background: #f0f0f0; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3>🔧 Información de Debug</h3>
+            <div id="debug-content">Cargando...</div>
+        </div>
+
+        <div id="queries-list" class="queries-list">
+            <!-- Las consultas aparecerán aquí -->
+        </div>
+
+        <div id="empty-state" class="empty-state hidden">
+            <div class="empty-icon">📝</div>
+            <h3>No hay consultas aún</h3>
+            <p>Estado vacío funcionando</p>
+        </div>
+    </div>
+
+    <script>
+        // Datos de prueba (iguales a los del servidor)
+        const testData = [
+            {
+                "id": 1,
+                "titulo": "SSD",
+                "descripcion": "ASDA",
+                "sql_codigo": "ASDA",
+                "favorito": false,
+                "etiquetas": ["SDASD"],
+                "created_at": "2025-10-01T04:49:50.595Z",
+                "updated_at": "2025-10-01T04:49:50.595Z"
+            },
+            {
+                "id": 2,
+                "titulo": "SDA",
+                "descripcion": "ASDASD",
+                "sql_codigo": "SDASD",
+                "favorito": true,
+                "etiquetas": ["SDASD"],
+                "created_at": "2025-10-01T04:50:12.229Z",
+                "updated_at": "2025-10-01T04:50:12.229Z"
+            }
+        ];
+
+        function debug(message) {
+            const debugContent = document.getElementById('debug-content');
+            debugContent.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${message}</p>`;
+        }
+
+        function testRender() {
+            debug('🚀 Iniciando test de renderizado');
+            
+            const queriesList = document.getElementById('queries-list');
+            const emptyState = document.getElementById('empty-state');
+            
+            debug(`📋 Datos de prueba: ${testData.length} consultas`);
+            debug(`🎯 queries-list encontrado: ${queriesList ? 'Sí' : 'No'}`);
+            debug(`🎯 empty-state encontrado: ${emptyState ? 'Sí' : 'No'}`);
+
+            if (testData.length === 0) {
+                debug('🚫 Mostrando estado vacío');
+                queriesList.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            } else {
+                debug('✅ Renderizando consultas');
+                emptyState.classList.add('hidden');
+                queriesList.classList.remove('hidden');
+                
+                queriesList.innerHTML = '';
+                
+                testData.forEach(query => {
+                    const queryElement = document.createElement('div');
+                    queryElement.className = 'query-item';
+                    queryElement.innerHTML = `
+                        <div class="query-header">
+                            <h3>${query.titulo}</h3>
+                            <span class="query-favorite ${query.favorito ? 'active' : ''}">${query.favorito ? '⭐' : '☆'}</span>
+                        </div>
+                        <p class="query-description">${query.descripcion}</p>
+                        <div class="query-sql">
+                            <code>${query.sql_codigo}</code>
+                        </div>
+                        <div class="query-tags">
+                            ${query.etiquetas.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                        <div class="query-date">
+                            Creado: ${new Date(query.created_at).toLocaleDateString()}
+                        </div>
+                    `;
+                    queriesList.appendChild(queryElement);
+                });
+                
+                debug(`🎨 Renderizadas ${testData.length} consultas`);
+            }
+        }
+
+        // Ejecutar test al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            debug('📄 DOM cargado, ejecutando test...');
+            testRender();
+        });
+    </script>
+</body>
+</html>
