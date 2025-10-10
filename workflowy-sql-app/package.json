@@ -10,7 +10,8 @@
     "dev": "node backend/server-hybrid.js",
     "build": "npm install && cd backend && npm install",
     "init-db": "node backend/scripts/initDatabase.js",
-    "railway:start": "node server-railway.js"
+    "railway:start": "node server-railway.js",
+    "iis:start": "node server-iis.js"
   },
   "keywords": [
     "sql",
@@ -29,6 +30,7 @@
   "dependencies": {
     "express": "^4.18.2",
     "mysql2": "^3.6.0",
+    "sqlite3": "^5.1.6",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1"
   },
