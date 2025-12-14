@@ -2,6 +2,18 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const swaggerUi = require('swagger-ui-express');
+const yaml = require('yaml');
+const swaggerSpecPath = path.join(__dirname, 'docs', 'openapi.yaml');
+let swaggerDocument = null;
+try {
+  if (fs.existsSync(swaggerSpecPath)) {
+    const file = fs.readFileSync(swaggerSpecPath, 'utf8');
+    swaggerDocument = yaml.parse(file);
+  }
+} catch (e) {
+  console.log('⚠️ No se pudo cargar OpenAPI spec:', e.message);
+}
 
 // Importar configuración de base de datos
 const database = require('./config/database');
@@ -50,6 +62,14 @@ if (fs.existsSync(staticPath)) {
 }
 
 app.use(express.static(staticPath));
+
+// ==================== SWAGGER UI ====================
+if (swaggerDocument) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  console.log('📚 Swagger UI disponible en /api-docs');
+} else {
+  console.log('⚠️ Swagger no configurado: falta docs/openapi.yaml');
+}
 
 // ==================== FUNCIONES DE PERSISTENCIA ====================
 

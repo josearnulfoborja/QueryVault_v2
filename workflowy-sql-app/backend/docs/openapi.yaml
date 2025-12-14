@@ -1,0 +1,160 @@
+openapi: 3.0.3
+info:
+  title: QueryVault API
+  version: 1.0.0
+  description: API para gestionar consultas SQL (híbrido JSON/MySQL)
+servers:
+  - url: http://localhost:3000
+paths:
+  /api/consultas:
+    get:
+      summary: Listar todas las consultas
+      responses:
+        '200':
+          description: Lista de consultas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Consulta'
+    post:
+      summary: Crear una nueva consulta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsultaInput'
+      responses:
+        '201':
+          description: Consulta creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Consulta'
+  /api/consultas/{id}:
+    get:
+      summary: Obtener una consulta por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Consulta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Consulta'
+        '404':
+          description: No encontrada
+    put:
+      summary: Actualizar una consulta
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsultaInput'
+      responses:
+        '200':
+          description: Consulta actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Consulta'
+    delete:
+      summary: Eliminar una consulta
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Eliminada
+  /api/consultas/{id}/versiones:
+    get:
+      summary: Obtener versiones de una consulta
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de versiones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VersionConsulta'
+components:
+  schemas:
+    Consulta:
+      type: object
+      properties:
+        id:
+          type: integer
+        titulo:
+          type: string
+        descripcion:
+          type: string
+        autor:
+          type: string
+        sql_codigo:
+          type: string
+        favorito:
+          type: boolean
+        etiquetas:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ConsultaInput:
+      type: object
+      required: [titulo, sql_codigo]
+      properties:
+        titulo:
+          type: string
+        descripcion:
+          type: string
+        autor:
+          type: string
+        sql_codigo:
+          type: string
+        favorito:
+          type: boolean
+        etiquetas:
+          type: array
+          items:
+            type: string
+    VersionConsulta:
+      type: object
+      properties:
+        id:
+          type: integer
+        consulta_id:
+          type: integer
+        sql_codigo:
+          type: string
+        fecha:
+          type: string
+          format: date-time

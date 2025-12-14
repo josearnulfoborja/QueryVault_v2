@@ -40,6 +40,12 @@ npm run dev
 npm start
 ```
 
+## Documentación API (Swagger)
+
+- Ruta: `/api-docs`
+- Especificación: `backend/docs/openapi.yaml`
+- Para ajustar el contrato, edita `openapi.yaml` y reinicia el server.
+
 ## API Endpoints
 
 ### Consultas
